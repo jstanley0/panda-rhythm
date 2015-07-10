@@ -12,7 +12,8 @@ var SOUNDS = [
     { name: 'Mid Tom', url: '/sounds/tom3.ogg' },
     { name: 'Low Tom', url: '/sounds/tom4.ogg' },
     { name: 'Crash 1', url: '/sounds/crash-2.ogg' },
-    { name: 'Crash 2', url: '/sounds/crash-1.ogg' }
+    { name: 'Crash 2', url: '/sounds/crash-1.ogg' },
+//    { name: 'Cowbell', url: '/sounds/cowbell.ogg' }
 ];
 
 var Track = React.createClass({
@@ -39,7 +40,7 @@ var Track = React.createClass({
                 <table className="table table-condensed table-striped-column" id={"track_" + name}>
                     {
                         _.range(SOUNDS.length).map(function(row) {
-                            return <tr key={row}><th>{SOUNDS[row].name}</th>
+                            return <tr key={row} data-row={row}><th>{SOUNDS[row].name}</th>
                                 {
                                     _.range(COLUMNS).map(function(col) {
                                         return <td key={col} data-col={col}><input data-col={col} data-row={row} type="checkbox"/></td>
@@ -60,7 +61,6 @@ var Tracker = React.createClass({
         g_Tracker = this;
 
         return {
-            nextLetter: 'A',
             tracks: []
         };
     },
@@ -73,19 +73,45 @@ var Tracker = React.createClass({
         );
     },
 
-    getNextLetter: function() {
-        var letter = this.state.nextLetter;
-        this.state.nextLetter = String.fromCharCode(this.state.nextLetter.charCodeAt(0) + 1);
-        return letter;
+    allTrackNames: function() {
+        return this.state.tracks.map(function(el) { return el.props.name });
+    },
+
+    newTrackName: function() {
+        var allNames = this.allTrackNames();
+        for(var i = 65; i <= 90; ++i) {
+            var name = String.fromCharCode(i);
+            if (allNames.indexOf(name) < 0) {
+                return name;
+            }
+        }
+        return null;
+    },
+
+    nextTrack: function(name, direction) {
+        var allNames = this.allTrackNames();
+        if (allNames.length == 0) {
+            return null;
+        }
+        var index = allNames.indexOf(name);
+        if (index < 0) {
+            return allNames[0];
+        }
+        return allNames[wrapAdd(index, direction, allNames.length)];
     },
 
     addTrack: function() {
-        var letter = this.getNextLetter();
+        var letter = this.newTrackName();
+        if (!letter) {
+            alert('26 tracks ought to be enough for anybody');
+            return;
+        }
         this.state.tracks.push(<Track key={letter} name={letter}/>);
         this.setState(this.state);
         var sequence = $('#input-track-sequence')
         sequence.val(sequence.val() + letter);
         sequence.trigger('change');
+        return letter;
     },
 
     removeTrack: function(name) {
@@ -103,15 +129,51 @@ var Tracker = React.createClass({
     },
 
     copyTrack: function(source) {
-        var newName = this.state.nextLetter;
-        this.addTrack();
+        var newName = this.addTrack();
         $("#track_" + source + " input:checked").each(function(index, el) {
             var row = el.getAttribute('data-row');
             var col = el.getAttribute('data-col');
             $('#track_' + newName + ' input[data-row="' + row + '"][data-col="' + col + '"]').prop('checked', true);
         });
+        return newName;
     }
 });
+
+function focusedLocation() {
+    var row = 0, col = 0, track = null;
+    var focused = document.activeElement;
+    if (focused.type == 'checkbox') {
+        row = parseInt(focused.getAttribute('data-row') || '0');
+        col = parseInt(focused.getAttribute('data-col') || '0');
+    }
+    var $table = $(focused).closest('table');
+    if ($table.length) {
+        var match = $table.attr('id').match(/^track_(.)$/);
+        if (match.length) {
+            track = match[1];
+        }
+    }
+    return { element: focused, row: row, col: col, track: track };
+}
+
+function focusLocation(track, row, col) {
+    $el = $('#track_' + track + ' input[data-row="' + row + '"][data-col="' + col + '"]');
+    if ($el.length) {
+        $el.focus();
+    }
+}
+
+function focusTrack(track, loc) {
+    loc = loc || focusedLocation();
+    focusLocation(track, loc.row, loc.col);
+}
+
+function finishInitialization() {
+    $('#loading_message').hide();
+    $("#button-add-track").prop("disabled", false);
+    var track = g_Tracker.addTrack();
+    focusTrack(track);
+}
 
 var Player = function() {
     this.tempo = 0;
@@ -148,17 +210,14 @@ Player.prototype.loadedSound = function(index, buffer) {
 
     // see if all are loaded, then proceed
     if (!_.detect(SOUNDS, function(sound) { return !sound.buffer; })) {
-        $('#loading_message').hide();
-        $("#button-add-track").prop("disabled", false);
+        finishInitialization();
     }
 }
 
 Player.prototype.changeTempo = function(tempo) {
     this.tempo = parseInt(tempo);
-    if (this.tempo > 255) {
-        this.tempo = 255;
-    } else if(this.tempo < 15) {
-        this.tempo = 15;
+    if(this.tempo < 1) {
+        this.tempo = 1;
     }
     if (this.interval) {
         this.setInterval();
@@ -177,6 +236,14 @@ Player.prototype.play = function() {
         this.restart();
     } else {
         this.setInterval();
+    }
+};
+
+Player.prototype.playOrPause = function() {
+    if (this.interval) {
+        this.pause();
+    } else {
+        this.play();
     }
 };
 
@@ -251,7 +318,138 @@ Player.prototype.playColumn = function(track, column) {
     });
 };
 
+function wrapAdd(a, b, max) {
+    var c = a + b;
+    while (c < 0) {
+        c += max;
+    }
+    while (c >= max) {
+        c -= max;
+    }
+    return c;
+}
+
+function initKeyboardNavigation() {
+    $('[data-toggle="popover"]').popover();
+    $(document).keydown(function(event) {
+        console.log(event);
+
+        // ** global shortcuts
+
+        // play / pause `
+        if (event.keyCode == 192) {
+            g_Player.playOrPause();
+            return;
+        }
+
+        // ** location-aware global shortcuts
+        var loc = focusedLocation();
+
+        // add track +
+        if (event.keyCode == 107 || event.keyCode == 187) {
+            var track = g_Tracker.addTrack();
+            focusTrack(track, loc);
+            return;
+        }
+
+        if (!loc.track) {
+            // shift+up/down when not in a track will select the last or first track
+            if (event.shiftKey && (event.keyCode == 38 || event.keyCode == 40)) {
+                var allTracks = g_Tracker.allTrackNames();
+                focusTrack(event.keyCode == 40 ? allTracks[0] : allTracks[allTracks.length - 1]);
+            }
+            // everything beyond this requires a location
+            return;
+        }
+
+        // ** local shortcuts
+
+        // delete track -
+        if (event.keyCode == 109 || event.keyCode == 189) {
+            var toFocus = g_Tracker.nextTrack(loc.track, 1);
+            g_Tracker.removeTrack(loc.track);
+            focusLocation(toFocus, loc.row, loc.col);
+            return;
+        }
+
+        // copy track [
+        if (event.keyCode == 219) {
+            focusTrack(g_Tracker.copyTrack(loc.track), loc);
+            return;
+        }
+
+        // clear track ]
+        if (event.keyCode == 221) {
+            g_Tracker.clearTrack(loc.track);
+            return;
+        }
+
+        if (event.keyCode >= 48 /* 0 */ && event.keyCode <= 57 /* 9 */ ||
+            event.keyCode >= 96 /* 0 */ && event.keyCode <= 105 /* 9 */) {
+            var number = event.keyCode - ((event.keyCode >= 96) ? 96 : 48);
+            if (event.shiftKey) {
+                focusLocation(loc.track, number, loc.col);
+            } else {
+                $('#track_' + loc.track + ' input[data-row="' + loc.row + '"]').prop("checked", false);
+                if (number != 0) {
+                    $('#track_' + loc.track + ' tr[data-row="' + loc.row + '"] td:nth-of-type(' + number + 'n+1) input').prop("checked", true);
+                }
+            }
+            return;
+        }
+
+        if (event.keyCode == 188 /* , */ || event.keyCode == 190 /* . */) {
+            // select / deselect one element and move to the next
+            loc.element.checked = (event.keyCode == 188);
+            var newRow, newCol;
+            if (event.shiftKey) {
+                newCol = (loc.row == SOUNDS.length - 1) ? wrapAdd(loc.col, 1, COLUMNS) : loc.col;
+                newRow = (loc.row < SOUNDS.length - 1) ? loc.row + 1 : 0;
+            } else {
+                newCol = (loc.col < COLUMNS - 1) ? loc.col + 1 : 0;
+                newRow = (loc.col == COLUMNS - 1) ? wrapAdd(loc.row, 1, SOUNDS.length) : loc.row;
+            }
+            focusLocation(loc.track, newRow, newCol);
+            return;
+        }
+
+        // navigation
+        if (event.keyCode >= 37 && event.keyCode <= 40) {
+            var dr = 0, dc = 0, track = loc.track;
+            switch(event.keyCode) {
+            case 37: // left
+                dc = -1;
+                break;
+            case 38: // up
+                dr = -1;
+                break;
+            case 39: // right
+                dc = 1;
+                break;
+            case 40: // down
+                dr = 1;
+                break;
+            }
+            if (dr != 0 || dc != 0) {
+                if (event.shiftKey) {
+                    dc *= 4;
+                    if (dr != 0) {
+                        track = g_Tracker.nextTrack(track, dr);
+                        dr = 0;
+                    }
+                }
+                var row = wrapAdd(loc.row, dr, SOUNDS.length);
+                var col = wrapAdd(loc.col, dc, COLUMNS);
+                focusLocation(track, row, col);
+             }
+        }
+    });
+
+}
+
 $(document).ready(function() {
+    initKeyboardNavigation();
+
     g_Player = new Player();
     g_Player.loadSounds();
 
@@ -273,6 +471,10 @@ $(document).ready(function() {
     $("#button-stop").click(function(event) {
         event.preventDefault();
         g_Player.stop();
+    });
+
+    $("#button-help").click(function(event) {
+        event.preventDefault();
     });
 
     $("#input-track-sequence").change(function(event) {

@@ -4,7 +4,7 @@
 <h1 class="page-header">Panda Rhythm</h1>
 <form class="form-inline">
   <div class="form-group">
-    <label for="input-tempo">Tempo</label>
+    <label for="input-tempo" accesskey="t">Tempo</label>
     <input type="number" class="form-control" id="input-tempo" value="120">
   </div>
   <div class="form-group">
@@ -16,12 +16,29 @@
   <div class="form-group">
     <button id="button-stop" class="btn"><span title="Stop" class="glyphicon glyphicon-stop"></button>
   </div>
+  <div class="form-group">
+    <button id="button-help" class="btn" data-toggle="popover" title="Keyboard shortcuts" data-html="true"
+            data-content="<table class='table table-striped table-condensed'>
+            <tr><th>Left/Right</th><td>Prev/Next column</td></tr>
+            <tr><th>Shift+Left/Right</th><td>Prev/Next beat</td></tr>
+            <tr><th>Up/Down</th><td>Prev/Next sound</td></tr>
+            <tr><th>Shift+Up/Down</th><td>Prev/Next track</td></tr>
+            <tr><th>,</th><td>Check beat and move right</td></tr>
+            <tr><th>.</th><td>Clear beat and move right</td></tr>
+            <tr><th>`</th><td>Play/Pause</td></tr>
+            <tr><th>=</th><td>New track</td></tr>
+            <tr><th>-</th><td>Delete track</td></tr>
+            <tr><th>[</th><td>Copy track</td></tr>
+            <tr><th>]</th><td>Clear track</td></tr>
+            </table>">
+      <span title="Help" class="glyphicon glyphicon-question-sign"></button>
+  </div>
 </form>
 <div class="tracks">
   <form class="form-inline">
     <div class="form-group">
       <label for="input-track-sequence">Sequence</label>
-      <input type="text" class="form-control" id="input-track-sequence" value="">
+      <input type="text" class="form-control" id="input-track-sequence" value="" accesskey="s">
     </div>
     <div class="form-group">
       <button id="button-add-track" disabled class="btn btn-primary"><span title="Add" class="glyphicon glyphicon-plus"></button>
