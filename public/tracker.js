@@ -29,15 +29,17 @@ var Track = React.createClass({
                     <button className="btn btn-danger button-remove-track" data-name={name}>
                         <span title="Delete" className="glyphicon glyphicon-remove"></span>
                     </button>
+                    <span className="track-spacer"></span>
+                    <span className="track-label">{this.props.name}</span>
+                    <span className="track-spacer"></span>
                     <button className="btn button-clear-track" data-name={name}>
                         <span title="Clear" className="glyphicon glyphicon-unchecked"></span>
                     </button>
                     <button className="btn button-copy-track" data-name={name}>
                         <span title="Copy" className="glyphicon glyphicon-log-out"></span>
                     </button>
-                    <div className="track-label">{this.props.name}</div>
                 </div>
-                <table className="table table-condensed table-striped-column" id={"track_" + name}>
+                <table className="track-table" id={"track_" + name}>
                     {
                         _.range(SOUNDS.length).map(function(row) {
                             return <tr key={row} data-row={row}><th>{SOUNDS[row].name}</th>
@@ -103,7 +105,6 @@ var Tracker = React.createClass({
     addTrack: function() {
         var letter = this.newTrackName();
         if (!letter) {
-            alert('26 tracks ought to be enough for anybody');
             return;
         }
         this.state.tracks.push(<Track key={letter} name={letter}/>);
@@ -332,7 +333,7 @@ function wrapAdd(a, b, max) {
 function initKeyboardNavigation() {
     $('[data-toggle="popover"]').popover();
     $(document).keydown(function(event) {
-        console.log(event);
+        //console.log(event);
 
         // ** global shortcuts
 

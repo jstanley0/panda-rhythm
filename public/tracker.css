@@ -1,41 +1,75 @@
-.tracks {
+.button-box {
     padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.player-inputs {
+    display: inline;
+}
+
+.player-inputs label {
+    padding-left: 10px;
+}
+
+#input-track-sequence {
+    width: 150px;
+}
+
+#input-tempo {
+    width: 80px;
 }
 
 .track {
-    padding-top: 20px;
+    display: flex;
+    align-items: stretch;
+    margin-right: 30px;
+    margin-bottom: 30px;
 }
 
 .track-header {
-    float: left;
-    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    background-color: steelblue;
 }
 
 .track-header button {
-    display: block;
-    margin-bottom: 4px;
+    margin: 5px;
 }
 
-.track table {
-    display: inline;
-    border: 1px black;
+.track-table tr:first-child th {
+    border-top: 0;
 }
 
-.table-striped-column > tbody > tr td:nth-of-type(odd) {
+.track-table tr:first-child td {
+    border-top: 0;
+}
+
+.track-table {
+    border: 1px solid steelblue;
+    border-spacing: 0;
+}
+
+.track-table td, th {
+    padding: 5px;
+    border-top: 1px solid lightgrey;
+}
+
+.track-table > tbody > tr td:nth-of-type(odd) {
     background-color: whitesmoke;
 }
 
-.table-striped-column > tbody > tr td:nth-of-type(4n+1) {
-    border-left: 1px solid #ddd;
+.track-table > tbody > tr td:nth-of-type(4n+1) {
+    border-left: 1px solid darkgrey;
 }
 
 .track-label {
     text-align: center;
     font-size: xx-large;
-    padding-top: 75px; /* hax! */
-    padding-bottom: 75px; /* haaaax! */
-    color: black;
-    background-color: whitesmoke;
+    color: white;
+}
+
+.track-spacer {
+    flex: 1;
 }
 
 td.play {
@@ -44,4 +78,9 @@ td.play {
 
 #loading_message {
     padding-top: 50px;
+}
+
+.track-list {
+    display: flex;
+    flex-wrap: wrap;
 }
