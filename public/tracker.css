@@ -1,0 +1,47 @@
+.tracks {
+    padding-top: 20px;
+}
+
+.track {
+    padding-top: 20px;
+}
+
+.track-header {
+    float: left;
+    padding-right: 5px;
+}
+
+.track-header button {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.track table {
+    display: inline;
+    border: 1px black;
+}
+
+.table-striped-column > tbody > tr td:nth-of-type(odd) {
+    background-color: whitesmoke;
+}
+
+.table-striped-column > tbody > tr td:nth-of-type(4n+1) {
+    border-left: 1px solid #ddd;
+}
+
+.track-label {
+    text-align: center;
+    font-size: xx-large;
+    padding-top: 75px; /* hax! */
+    padding-bottom: 75px; /* haaaax! */
+    color: black;
+    background-color: whitesmoke;
+}
+
+td.play {
+    background-color: gold !important;
+}
+
+#loading_message {
+    padding-top: 50px;
+}
