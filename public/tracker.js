@@ -32,10 +32,10 @@ var Track = React.createClass({
                     <span className="track-spacer"></span>
                     <span className="track-label">{this.props.name}</span>
                     <span className="track-spacer"></span>
-                    <button className="btn button-clear-track" data-name={name}>
+                    <button className="btn btn-normal button-clear-track" data-name={name}>
                         <span title="Clear" className="glyphicon glyphicon-unchecked"></span>
                     </button>
-                    <button className="btn button-copy-track" data-name={name}>
+                    <button className="btn btn-normal button-copy-track" data-name={name}>
                         <span title="Copy" className="glyphicon glyphicon-log-out"></span>
                     </button>
                 </div>
@@ -333,7 +333,7 @@ function wrapAdd(a, b, max) {
 function initKeyboardNavigation() {
     $('[data-toggle="popover"]').popover();
     $(document).keydown(function(event) {
-        //console.log(event);
+        console.log(event);
 
         // ** global shortcuts
 
@@ -347,15 +347,15 @@ function initKeyboardNavigation() {
         var loc = focusedLocation();
 
         // add track +
-        if (event.keyCode == 107 || event.keyCode == 187) {
+        if (event.keyCode == 107 || event.keyCode == 187 || event.keyCode == 61) {
             var track = g_Tracker.addTrack();
             focusTrack(track, loc);
             return;
         }
 
         if (!loc.track) {
-            // shift+up/down when not in a track will select the last or first track
-            if (event.shiftKey && (event.keyCode == 38 || event.keyCode == 40)) {
+            // [ or ] when not in a track will select the last or first track
+            if (event.keyCode == 219 || event.keyCode == 221) {
                 var allTracks = g_Tracker.allTrackNames();
                 focusTrack(event.keyCode == 40 ? allTracks[0] : allTracks[allTracks.length - 1]);
             }
@@ -366,21 +366,28 @@ function initKeyboardNavigation() {
         // ** local shortcuts
 
         // delete track -
-        if (event.keyCode == 109 || event.keyCode == 189) {
+        if (event.keyCode == 109 || event.keyCode == 189 || event.keyCode == 173) {
             var toFocus = g_Tracker.nextTrack(loc.track, 1);
             g_Tracker.removeTrack(loc.track);
             focusLocation(toFocus, loc.row, loc.col);
             return;
         }
 
-        // copy track [
-        if (event.keyCode == 219) {
+        // previous track [ / next track ]
+        if (event.keyCode == 219 || event.keyCode == 221) {
+            var newTrack = g_Tracker.nextTrack(loc.track, event.keyCode - 220);
+            focusTrack(newTrack, loc);
+            return;
+        }
+
+        // copy track \
+        if (event.keyCode == 220) {
             focusTrack(g_Tracker.copyTrack(loc.track), loc);
             return;
         }
 
-        // clear track ]
-        if (event.keyCode == 221) {
+        // clear track ;
+        if (event.keyCode == 186 || event.keyCode == 59) {
             g_Tracker.clearTrack(loc.track);
             return;
         }
@@ -416,7 +423,7 @@ function initKeyboardNavigation() {
 
         // navigation
         if (event.keyCode >= 37 && event.keyCode <= 40) {
-            var dr = 0, dc = 0, track = loc.track;
+            var dr = 0, dc = 0;
             switch(event.keyCode) {
             case 37: // left
                 dc = -1;
@@ -432,16 +439,9 @@ function initKeyboardNavigation() {
                 break;
             }
             if (dr != 0 || dc != 0) {
-                if (event.shiftKey) {
-                    dc *= 4;
-                    if (dr != 0) {
-                        track = g_Tracker.nextTrack(track, dr);
-                        dr = 0;
-                    }
-                }
                 var row = wrapAdd(loc.row, dr, SOUNDS.length);
                 var col = wrapAdd(loc.col, dc, COLUMNS);
-                focusLocation(track, row, col);
+                focusLocation(loc.track, row, col);
              }
         }
     });
@@ -489,15 +489,19 @@ $(document).ready(function() {
 
     $("#tracker-container").on("click", ".button-remove-track", function(event) {
         g_Tracker.removeTrack($(this).data('name'));
-    })
+    });
 
     $("#tracker-container").on("click", ".button-clear-track", function(event) {
         g_Tracker.clearTrack($(this).data('name'));
-    })
+    });
 
     $("#tracker-container").on("click", ".button-copy-track", function(event) {
         g_Tracker.copyTrack($(this).data('name'));
-    })
+    });
+
+    $("#tracker-container").on("change", "table input[type=checkbox]", function(event) {
+        this.focus();
+    });
 
     React.render(<Tracker/>, $('#tracker-container')[0]);
 })

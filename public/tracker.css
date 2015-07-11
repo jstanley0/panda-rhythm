@@ -1,10 +1,17 @@
 .button-box {
-    padding-top: 20px;
     padding-bottom: 20px;
 }
 
 .player-inputs {
     display: inline;
+}
+
+.btn-normal {
+    background-color: #eee;
+}
+
+.btn-normal:hover {
+    background-color: #ddd;
 }
 
 .player-inputs label {
@@ -19,6 +26,10 @@
     width: 80px;
 }
 
+.track-header .button-clear-track {
+    margin-bottom: 0px; /* hax! y u no collapse */
+}
+
 .track {
     display: flex;
     align-items: stretch;
@@ -29,7 +40,7 @@
 .track-header {
     display: flex;
     flex-direction: column;
-    background-color: steelblue;
+    background-color: lightslategrey;
 }
 
 .track-header button {
@@ -45,7 +56,7 @@
 }
 
 .track-table {
-    border: 1px solid steelblue;
+    border: 1px solid lightslategrey;
     border-spacing: 0;
 }
 
