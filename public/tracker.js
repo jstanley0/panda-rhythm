@@ -125,8 +125,14 @@ var Tracker = React.createClass({
         sequence.trigger('change');
     },
 
-    clearTrack: function(name) {
-        $("#track_" + name + " input:checked").prop('checked', false);
+    clearTrack: function(name, startingColumn) {
+        if (startingColumn > 0) {
+            for(var c = startingColumn; c < COLUMNS; ++c) {
+                $('#track_' + name + ' input:checked[data-col="' + c + '"]').prop('checked', false);
+            }
+        } else {
+            $("#track_" + name + " input:checked").prop('checked', false);
+        }
     },
 
     copyTrack: function(source) {
@@ -158,7 +164,7 @@ function focusedLocation() {
 }
 
 function focusLocation(track, row, col) {
-    $el = $('#track_' + track + ' input[data-row="' + row + '"][data-col="' + col + '"]');
+    $el = $('#track_' + track + ' tr[data-row="' + row + '"] td[data-col="' + col + '"] input');
     if ($el.length) {
         $el.focus();
     }
@@ -368,6 +374,12 @@ function initKeyboardNavigation() {
             return;
         }
 
+        // help ?
+        if (event.shiftKey && event.keyCode == 191) {
+            $("#button-help").trigger('click');
+        }
+
+
         // ** location-aware global shortcuts
         var loc = focusedLocation();
 
@@ -413,7 +425,7 @@ function initKeyboardNavigation() {
 
         // clear track ;
         if (event.keyCode == 186 || event.keyCode == 59) {
-            g_Tracker.clearTrack(loc.track);
+            g_Tracker.clearTrack(loc.track, event.shiftKey ? loc.col : 0);
             return;
         }
 
@@ -423,7 +435,7 @@ function initKeyboardNavigation() {
             if (event.shiftKey) {
                 focusLocation(loc.track, number, loc.col);
             } else {
-                $('#track_' + loc.track + ' input[data-row="' + loc.row + '"]').prop("checked", false);
+                $('#track_' + loc.track + ' tr[data-row="' + loc.row + '"] input').prop("checked", false);
                 if (number != 0) {
                     $('#track_' + loc.track + ' tr[data-row="' + loc.row + '"] td:nth-of-type(' + number + 'n+1) input').prop("checked", true);
                 }
