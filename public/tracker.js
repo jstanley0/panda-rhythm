@@ -439,6 +439,9 @@ function initKeyboardNavigation() {
                 break;
             }
             if (dr != 0 || dc != 0) {
+                if (event.shiftKey) {
+                    dc *= 4;
+                }
                 var row = wrapAdd(loc.row, dr, SOUNDS.length);
                 var col = wrapAdd(loc.col, dc, COLUMNS);
                 focusLocation(loc.track, row, col);
