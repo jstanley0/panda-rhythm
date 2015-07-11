@@ -3,17 +3,17 @@
 var COLUMNS = 16;
 
 var SOUNDS = [
-    { name: 'Bass Drum', url: '/sounds/bass.ogg' },
-    { name: 'Snare Drum', url: '/sounds/snare.ogg' },
-    { name: 'Closed Hi-hat', url: '/sounds/hat-closed.ogg' },
-    { name: 'Open Hi-hat', url: '/sounds/hat-open.ogg' },
-    { name: 'Ride Cymbal', url: '/sounds/ride.ogg' },
-    { name: 'Hi Tom', url: '/sounds/tom2.ogg' },
-    { name: 'Mid Tom', url: '/sounds/tom3.ogg' },
-    { name: 'Low Tom', url: '/sounds/tom4.ogg' },
-    { name: 'Crash 1', url: '/sounds/crash-2.ogg' },
-    { name: 'Crash 2', url: '/sounds/crash-1.ogg' },
-//    { name: 'Cowbell', url: '/sounds/cowbell.ogg' }
+    { name: 'Bass Drum', url: '/sounds/bass.ogg', alt: '/sounds/bass.m4a' },
+    { name: 'Snare Drum', url: '/sounds/snare.ogg', alt: '/sounds/snare.m4a' },
+    { name: 'Closed Hi-hat', url: '/sounds/hat-closed.ogg', alt: '/sounds/hat-closed.m4a' },
+    { name: 'Open Hi-hat', url: '/sounds/hat-open.ogg', alt: '/sounds/hat-open.m4a' },
+    { name: 'Ride Cymbal', url: '/sounds/ride.ogg', alt: '/sounds/ride.m4a' },
+    { name: 'Hi Tom', url: '/sounds/tom2.ogg', alt: '/sounds/tom2.m4a' },
+    { name: 'Mid Tom', url: '/sounds/tom3.ogg', alt: '/sounds/tom3.m4a' },
+    { name: 'Low Tom', url: '/sounds/tom4.ogg', alt: '/sounds/tom4.m4a' },
+    { name: 'Crash 1', url: '/sounds/crash-2.ogg', alt: '/sounds/crash-2.m4a' },
+    { name: 'Crash 2', url: '/sounds/crash-1.ogg', alt: '/sounds/crash-1.m4a' },
+//    { name: 'Cowbell', url: '/sounds/cowbell.ogg', alt: '/sounds/cowbell.m4a' }
 ];
 
 var Track = React.createClass({
@@ -176,42 +176,67 @@ function finishInitialization() {
     focusTrack(track);
 }
 
+function unsupportedBrowser() {
+    $('#loading_message').hide();
+    $('#unsupported_browser').show();
+}
+
 var Player = function() {
     this.tempo = 0;
     this.sequence = '';
     this.index = 0;
     this.column = 0;
     this.interval = null;
+    this.altAudioFmt = false;
 };
 
-Player.prototype.loadSounds = function() {
-    this.audio_context = new AudioContext();
+Player.prototype.downloadSound = function(index) {
+    var url = this.altAudioFmt ? SOUNDS[index].alt : SOUNDS[index].url;
+    var request = new XMLHttpRequest();
+    request.open("GET", url, true);
+    request.responseType = "arraybuffer";
     var self = this;
-    for(var index in SOUNDS) {
-        var url = SOUNDS[index].url;
-        var request = new XMLHttpRequest();
-        request.open("GET", url, true);
-        request.responseType = "arraybuffer";
-        request.data_index = index;
-        request.onload = function() {
-            var index = this.data_index;
-            self.audio_context.decodeAudioData(this.response, function(buffer) {
-                console.log("loaded " + SOUNDS[index].url + "");
-                self.loadedSound(index, buffer);
-            }, function(e) {
-                console.error("Failed to load audio data for " + SOUNDS[index].url);
-            });
-        };
-        request.send();
-    }
+    request.onload = function() {
+        self.audio_context.decodeAudioData(this.response, function(buffer) {
+            console.log("loaded " + url + "");
+            self.decodedSound(index, buffer);
+        }, function(e) {
+            if (!self.altAudioFmt && index == 0) {
+                // fall back to .m4a for those dirty Safari users
+                self.altAudioFmt = true;
+                self.downloadSound(0);
+            } else {
+                $("<p>").text("Failed to decode " + url).appendTo($("#loading_message"));
+            }
+        });
+    };
+    request.send();
 }
 
-Player.prototype.loadedSound = function(index, buffer) {
+Player.prototype.loadSounds = function() {
+    if (window.hasOwnProperty('AudioContext')) {
+        this.audio_context = new AudioContext();
+    } else if (window.hasOwnProperty('webkitAudioContext')) {
+        this.audio_context = new webkitAudioContext();
+    } else {
+        unsupportedBrowser();
+    }
+    this.downloadSound(0);
+}
+
+Player.prototype.decodedSound = function(index, buffer) {
     SOUNDS[index].buffer = buffer;
 
-    // see if all are loaded, then proceed
-    if (!_.detect(SOUNDS, function(sound) { return !sound.buffer; })) {
-        finishInitialization();
+    // if this is sound 0, we've found a supported audio format. load the remainder
+    if (index == 0) {
+        for(var i = 1; i < SOUNDS.length; ++i) {
+            this.downloadSound(i);
+        }
+    } else {
+        // see if all are loaded, then proceed
+        if (!_.detect(SOUNDS, function (sound) { return !sound.buffer; })) {
+            finishInitialization();
+        }
     }
 }
 
@@ -463,22 +488,15 @@ $(document).ready(function() {
     $("#input-tempo").trigger('change');
 
     $("#button-play").click(function(event) {
-        event.preventDefault();
         g_Player.play();
     });
 
     $("#button-pause").click(function(event) {
-        event.preventDefault();
         g_Player.pause();
     });
 
     $("#button-stop").click(function(event) {
-        event.preventDefault();
         g_Player.stop();
-    });
-
-    $("#button-help").click(function(event) {
-        event.preventDefault();
     });
 
     $("#input-track-sequence").change(function(event) {
@@ -486,7 +504,6 @@ $(document).ready(function() {
     });
 
     $("#button-add-track").click(function(event) {
-        event.preventDefault();
         g_Tracker.addTrack();
     });
 

@@ -31,6 +31,7 @@
 }
 
 .track {
+    display: -webkit-flex;
     display: flex;
     align-items: stretch;
     margin-right: 30px;
@@ -38,7 +39,9 @@
 }
 
 .track-header {
+    display: -webkit-flex;
     display: flex;
+    -webkit-flex-direction: column;
     flex-direction: column;
     background-color: lightslategrey;
 }
@@ -80,6 +83,7 @@
 }
 
 .track-spacer {
+    -webkit-flex: 1;
     flex: 1;
 }
 
@@ -92,6 +96,18 @@ td.play {
 }
 
 .track-list {
+    display: -webkit-flex;
     display: flex;
+    -webkit-flex-wrap: wrap;
     flex-wrap: wrap;
+}
+
+.page-header {
+    font-style: oblique;
+    font-weight: 100;
+}
+
+.page-header img {
+    vertical-align: baseline;
+    margin-right: 20px;
 }
