@@ -36,6 +36,9 @@
     align-items: stretch;
     margin-right: 30px;
     margin-bottom: 30px;
+    -webkit-box-shadow: 10px 10px 30px 0px rgba(0,0,0,0.22);
+    -moz-box-shadow: 10px 10px 30px 0px rgba(0,0,0,0.22);
+    box-shadow: 10px 10px 30px 0px rgba(0,0,0,0.22);
 }
 
 .track-header {
