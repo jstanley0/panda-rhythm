@@ -122,15 +122,20 @@ td.play {
     margin-right: 20px;
 }
 
+/* there are many wrong ways to do this on the internet.
+   the actual checkbox cannot be "display: none", or it won't receive keyboard focus;
+   also, it can't be shoved off the far edge of the universe, or the browser will try
+   to scroll to it when you click the label. so we will instead set its opacity to 0
+   and place our custom thing directly on top of it. */
 .track-table input[type="checkbox"] {
+    width: 18px;
+    margin: 0;
+    padding: 0;
     opacity: 0;
-    position: absolute;
-    top: 0; left: 0;
-    margin: 0; padding: 0;
 }
 
 .track-table input[type="checkbox"] + label {
-    margin: 0;
+    margin: 0 0 0 -18px;
     border: 2px solid transparent;
 }
 
