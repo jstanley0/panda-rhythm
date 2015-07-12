@@ -16,6 +16,10 @@ var SOUNDS = [
 //    { name: 'Cowbell', url: '/sounds/cowbell.ogg', alt: '/sounds/cowbell.m4a' }
 ];
 
+function checkId(track, row, col) {
+    return track + "_" + row + "_" + col;
+}
+
 var Track = React.createClass({
     getInitialState: function() {
         return {};
@@ -45,7 +49,11 @@ var Track = React.createClass({
                             return <tr key={row} data-row={row}><th>{SOUNDS[row].name}</th>
                                 {
                                     _.range(COLUMNS).map(function(col) {
-                                        return <td key={col} data-col={col}><input data-col={col} data-row={row} type="checkbox"/></td>
+                                        var id = checkId(name, row, col);
+                                        return <td key={col} data-col={col}>
+                                            <input id={id} data-col={col} data-row={row} type="checkbox"/>
+                                            <label htmlFor={id}><span/></label>
+                                            </td>
                                     })
                                 }
                                 </tr>;
@@ -140,7 +148,7 @@ var Tracker = React.createClass({
         $("#track_" + source + " input:checked").each(function(index, el) {
             var row = el.getAttribute('data-row');
             var col = el.getAttribute('data-col');
-            $('#track_' + newName + ' input[data-row="' + row + '"][data-col="' + col + '"]').prop('checked', true);
+            $('#' + checkId(newName, row, col)).prop('checked', true);
         });
         return newName;
     }
@@ -164,10 +172,7 @@ function focusedLocation() {
 }
 
 function focusLocation(track, row, col) {
-    $el = $('#track_' + track + ' tr[data-row="' + row + '"] td[data-col="' + col + '"] input');
-    if ($el.length) {
-        $el.focus();
-    }
+    $("#" + checkId(track, row, col)).focus();
 }
 
 function focusTrack(track, loc) {
