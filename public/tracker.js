@@ -268,6 +268,22 @@ Player.prototype.changeSequence = function(sequence) {
     }
 };
 
+// iOS won't play Web Audio until it is activated as the result of a user action
+// so play a sound (silently) when the user clicks play, just to make iOS happy
+Player.prototype.enableSoundOnIOS = function() {
+    if (!this.unmutedIOS) {
+        this.unmutedIOS = true;
+        var buffer = SOUNDS[0].buffer;
+        var source = this.audio_context.createBufferSource();
+        source.buffer = buffer;
+        var gainNode = this.audio_context.createGain();
+        gainNode.gain.value = 0;
+        source.connect(gainNode);
+        gainNode.connect(this.audio_context.destination);
+        source.start(0);
+    }
+}
+
 Player.prototype.play = function() {
     if (this.interval) {
         this.restart();
@@ -505,6 +521,7 @@ $(document).ready(function() {
     $("#input-tempo").trigger('change');
 
     $("#button-play").click(function(event) {
+        g_Player.enableSoundOnIOS();
         g_Player.play();
     });
 
