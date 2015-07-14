@@ -8,12 +8,12 @@ var SOUNDS = [
     { name: 'Closed Hi-hat', url: '/sounds/hat-closed.ogg', alt: '/sounds/hat-closed.m4a' },
     { name: 'Open Hi-hat', url: '/sounds/hat-open.ogg', alt: '/sounds/hat-open.m4a' },
     { name: 'Ride Cymbal', url: '/sounds/ride.ogg', alt: '/sounds/ride.m4a' },
+    { name: 'Cowbell', url: '/sounds/cowbell.ogg', alt: '/sounds/cowbell.m4a' },
     { name: 'Hi Tom', url: '/sounds/tom2.ogg', alt: '/sounds/tom2.m4a' },
     { name: 'Mid Tom', url: '/sounds/tom3.ogg', alt: '/sounds/tom3.m4a' },
     { name: 'Low Tom', url: '/sounds/tom4.ogg', alt: '/sounds/tom4.m4a' },
     { name: 'Crash 1', url: '/sounds/crash-2.ogg', alt: '/sounds/crash-2.m4a' },
-    { name: 'Crash 2', url: '/sounds/crash-1.ogg', alt: '/sounds/crash-1.m4a' },
-//    { name: 'Cowbell', url: '/sounds/cowbell.ogg', alt: '/sounds/cowbell.m4a' }
+    { name: 'Crash 2', url: '/sounds/crash-1.ogg', alt: '/sounds/crash-1.m4a' }
 ];
 
 function checkId(track, row, col) {
