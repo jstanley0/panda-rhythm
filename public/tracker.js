@@ -16,6 +16,8 @@ var SOUNDS = [
     { name: 'Crash 2', url: '/sounds/crash-1.ogg', alt: '/sounds/crash-1.m4a' }
 ];
 
+var current_song;
+
 function checkId(track, row, col) {
     return track + "_" + row + "_" + col;
 }
@@ -65,6 +67,63 @@ var Track = React.createClass({
     }
 });
 
+ReactModal.setAppElement('#tracker-container');
+
+var OpenDialog = React.createClass({
+    getInitialState: function() {
+       return { isOpen: false, disabled: true, songs: [] };
+    },
+
+    openModal: function() {
+        this.setState({isOpen: true});
+    },
+
+    afterOpenModal: function() {
+        this.setState(this.state);
+    },
+
+    closeModal: function() {
+        this.setState({isOpen: false});
+    },
+
+    Ok: function() {
+        this.closeModal();
+        this.props.onSongSelected(this.refs.songSelect.value);
+    },
+
+    songChanged: function() {
+        var song = this.refs.songSelect.value;
+        if (song) {
+            this.setState({disabled: false});
+        } else {
+            this.setState({disabled: true});
+        }
+    },
+
+    render: function() {
+        return (
+            <ReactModal isOpen={this.state.isOpen}
+                onAfterOpen={this.afterOpenModal}
+                onRequestClose={this.closeModal} >
+                <div className="form-group">
+                    <label htmlFor="song-select">Select song:</label>
+                    <select ref="songSelect" className="form-control" id="song-select" onChange={this.songChanged}>
+                        <option value=''></option>
+                    {
+                        _.map(this.state.songs, function(name) {
+                            return <option value={name}>{name}</option>
+                        })
+                    }
+                    </select>
+                </div>
+                <button onClick={this.Ok} className="btn btn-primary" disabled={this.state.disabled}>Open</button>
+                &ensp;
+                <button onClick={this.closeModal} className="btn btn-default">Cancel</button>
+            </ReactModal>
+        );
+    }
+});
+
 var g_Tracker;
 var Tracker = React.createClass({
     getInitialState: function() {
@@ -75,10 +134,18 @@ var Tracker = React.createClass({
         };
     },
 
+    componentDidMount: function() {
+        var songs = JSON.parse(localStorage.songs);
+        this.refs.openDialog.setState({songs: _.keys(songs)});
+    },
+
     render: function() {
         return (
-            <div className="track-list">
-                {this.state.tracks}
+            <div>
+                <div className="track-list">
+                    {this.state.tracks}
+                </div>
+                <OpenDialog ref="openDialog" onSongSelected={this.onSongSelected}/>
             </div>
         );
     },
@@ -110,8 +177,8 @@ var Tracker = React.createClass({
         return allNames[wrapAdd(index, direction, allNames.length)];
     },
 
-    addTrack: function() {
-        var letter = this.newTrackName();
+    addTrack: function(letter) {
+        letter = letter || this.newTrackName();
         if (!letter) {
             return;
         }
@@ -151,6 +218,80 @@ var Tracker = React.createClass({
             $('#' + checkId(newName, row, col)).prop('checked', true);
         });
         return newName;
+    },
+
+    clearSong: function() {
+        this.setState({tracks: []});
+        $('#input-track-sequence').val('').trigger('change');
+    },
+
+    saveSong: function(name) {
+        current_song = name;
+        var song = {
+            sequence: $('#input-track-sequence').val(),
+            tempo: parseInt($("#input-tempo").val()),
+            tracks: {}
+        }
+        _.each(this.state.tracks, function(track) {
+            var track_hash = {}
+            for(var row in SOUNDS) {
+                var cols = "";
+                for(var i = 0; i < COLUMNS; ++i) {
+                    cols += (document.getElementById(checkId(track.props.name, row, i)).checked ? '*' : ' ');
+                }
+                track_hash[SOUNDS[row].name] = cols;
+            }
+            song.tracks[track.props.name] = track_hash;
+        });
+        // wai u no store objects, localStorage :P
+        var songs = JSON.parse(localStorage.songs);
+        songs[name] = song;
+        localStorage.songs = JSON.stringify(songs);
+        this.refs.openDialog.setState({songs: _.keys(songs)});
+    },
+
+    loadSong: function(name) {
+        var songs = JSON.parse(localStorage.songs);
+        var song;
+        var self = this;
+        if (song = songs[name]) {
+            this.clearSong();
+            // FIXME: there's got to be a way to defer until the state changes take effect
+            setTimeout(function() {
+                _.each(song.tracks, function(track, name) {
+                    self.addTrack(name);
+                });
+                current_song = name;
+
+                // oh, the humanity
+                setTimeout(function() {
+                    $('#input-tempo').val(song.tempo);
+                    _.each(song.tracks, function(track, name) {
+                        for(var row in SOUNDS) {
+                            var sound = SOUNDS[row].name;
+                            if (track[sound]) {
+                                for(var i = 0; i < COLUMNS; ++i) {
+                                    if (track[sound][i] != ' ') {
+                                        document.getElementById(checkId(name, row, i)).checked = true;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    $('#input-track-sequence').val(song.sequence).trigger('change');
+                }, 200);
+            }, 200);
+        } else {
+            alert('Song not found :(');
+        }
+    },
+
+    onOpen: function() {
+        this.refs.openDialog.openModal();
+    },
+
+    onSongSelected: function(name) {
+        this.loadSong(name);
     }
 });
 
@@ -382,10 +523,16 @@ function wrapAdd(a, b, max) {
     return c;
 }
 
+function initLocalStorage() {
+    if (localStorage.songs === undefined) {
+        localStorage.songs = "{}"
+    }
+}
+
 function initKeyboardNavigation() {
     $('[data-toggle="popover"]').popover();
     $(document).keydown(function(event) {
-        console.log(event);
+        //console.log(event);
 
         // ** global shortcuts
 
@@ -511,6 +658,7 @@ function initKeyboardNavigation() {
 
 $(document).ready(function() {
     initKeyboardNavigation();
+    initLocalStorage();
 
     g_Player = new Player();
     g_Player.loadSounds();
@@ -541,6 +689,17 @@ $(document).ready(function() {
         g_Tracker.addTrack();
     });
 
+    $("#button-save").click(function(event) {
+        var name = prompt("Name your masterpiece", current_song);
+        if (name) {
+            g_Tracker.saveSong(name);
+        }
+    });
+
+    $("#button-open").click(function(event) {
+        g_Tracker.onOpen();
+    });
+
     $("#tracker-container").on("click", ".button-remove-track", function(event) {
         g_Tracker.removeTrack($(this).data('name'));
     });
@@ -557,5 +716,5 @@ $(document).ready(function() {
         this.focus();
     });
 
-    React.render(<Tracker/>, $('#tracker-container')[0]);
+    ReactDOM.render(<Tracker/>, $('#tracker-container')[0]);
 })
