@@ -14,6 +14,20 @@
     background-color: #ddd;
 }
 
+.btn-global {
+    color: white;
+    background-color: slategrey;
+}
+
+.btn-global:hover {
+    color: white;
+    background-color: lightslategrey;
+}
+
+.btn-global:focus {
+    color: cornsilk;
+}
+
 .player-inputs label {
     padding-left: 10px;
 }
@@ -168,4 +182,31 @@ td.play {
 .track-table input[type="checkbox"]:focus + label
 {
     border: 2px solid lightblue;
+}
+
+.open-modal-overlay {
+    position          : fixed;
+    top               : 0;
+    left              : 0;
+    right             : 0;
+    bottom            : 0;
+    background-color  : rgba(255, 255, 255, 0.75);
+}
+
+.open-modal {
+    position                   : absolute;
+    top                        : 20%;
+    left                       : 50%;
+    width                      : 400px;
+    margin-left                :-200px;
+    border                     : 1px solid #ccc;
+    background                 : #fff;
+    overflow                   : auto;
+    webkit-overflow-scrolling  : touch;
+    border-radius              : 4px;
+    outline                    : none;
+    padding                    : 20px;
+    -webkit-box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.42);
+    -moz-box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.42);
+    box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.42);
 }

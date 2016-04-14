@@ -79,7 +79,9 @@ var OpenDialog = React.createClass({
     },
 
     afterOpenModal: function() {
-        this.setState(this.state);
+        this.refs.songSelect.value = current_song;
+        this.refs.songSelect.focus();
+        this.songChanged();
     },
 
     closeModal: function() {
@@ -93,7 +95,7 @@ var OpenDialog = React.createClass({
 
     songChanged: function() {
         var song = this.refs.songSelect.value;
-        if (song) {
+        if (song && song.length > 0) {
             this.setState({disabled: false});
         } else {
             this.setState({disabled: true});
@@ -104,21 +106,24 @@ var OpenDialog = React.createClass({
         return (
             <ReactModal isOpen={this.state.isOpen}
                 onAfterOpen={this.afterOpenModal}
-                onRequestClose={this.closeModal} >
-                <div className="form-group">
-                    <label htmlFor="song-select">Select song:</label>
-                    <select ref="songSelect" className="form-control" id="song-select" onChange={this.songChanged}>
-                        <option value=''></option>
-                    {
-                        _.map(this.state.songs, function(name) {
-                            return <option value={name}>{name}</option>
-                        })
-                    }
-                    </select>
-                </div>
-                <button onClick={this.Ok} className="btn btn-primary" disabled={this.state.disabled}>Open</button>
-                &ensp;
-                <button onClick={this.closeModal} className="btn btn-default">Cancel</button>
+                onRequestClose={this.closeModal}
+                className="open-modal"
+                overlayClassName="open-modal-overlay">
+                <form action="#">
+                    <div className="form-group">
+                        <label htmlFor="song-select">Select song:</label>
+                        <select ref="songSelect" className="form-control" id="song-select" onChange={this.songChanged}>
+                        {
+                            _.map(this.state.songs, function(name) {
+                                return <option value={name}>{name}</option>
+                            })
+                        }
+                        </select>
+                    </div>
+                    <button type="submit" onClick={this.Ok} className="btn btn-primary" disabled={this.state.disabled}>Open</button>
+                    &ensp;
+                    <button onClick={this.closeModal} className="btn btn-default">Cancel</button>
+                </form>
             </ReactModal>
         );
     }
@@ -221,6 +226,7 @@ var Tracker = React.createClass({
     },
 
     clearSong: function() {
+        current_song = "";
         this.setState({tracks: []});
         $('#input-track-sequence').val('').trigger('change');
     },
@@ -257,6 +263,7 @@ var Tracker = React.createClass({
         if (song = songs[name]) {
             this.clearSong();
             // FIXME: there's got to be a way to defer until the state changes take effect
+            // OR MAYBE I SHOULD STOP FIGHTING THE SYSTEM AND JUST USE STATE TO STORE STATE
             setTimeout(function() {
                 _.each(song.tracks, function(track, name) {
                     self.addTrack(name);
@@ -292,6 +299,13 @@ var Tracker = React.createClass({
 
     onSongSelected: function(name) {
         this.loadSong(name);
+    },
+
+    onSave: function() {
+        var name = prompt("Name your masterpiece", current_song);
+        if (name) {
+            g_Tracker.saveSong(name);
+        }
     }
 });
 
@@ -536,6 +550,20 @@ function initKeyboardNavigation() {
 
         // ** global shortcuts
 
+        // open
+        if (event.keyCode == 79 && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            g_Tracker.onOpen();
+            return;
+        }
+
+        // save
+        if (event.keyCode == 83 && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            g_Tracker.onSave();
+            return;
+        }
+
         // play / pause `
         if (event.keyCode == 192) {
             g_Player.playOrPause();
@@ -690,14 +718,17 @@ $(document).ready(function() {
     });
 
     $("#button-save").click(function(event) {
-        var name = prompt("Name your masterpiece", current_song);
-        if (name) {
-            g_Tracker.saveSong(name);
-        }
+        g_Tracker.onSave();
     });
 
     $("#button-open").click(function(event) {
         g_Tracker.onOpen();
+    });
+
+    $("#button-clear").click(function(event) {
+        g_Tracker.clearSong();
+        var track = g_Tracker.addTrack();
+        focusTrack(track);
     });
 
     $("#tracker-container").on("click", ".button-remove-track", function(event) {
