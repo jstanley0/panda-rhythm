@@ -4,6 +4,7 @@ require 'rack'
 require 'oauth/request_proxy/rack_request'
 require 'net/http'
 require 'json'
+require_relative 'song_db'
 
 # otherwise SAMEORIGIN is set and the frame can't be embedded in Canvas
 set :protection, :except => :frame_options
@@ -45,6 +46,31 @@ post '/submit' do
   else
     show_error res.description
   end
+end
+
+get '/songs/:id' do
+  content_type :json
+  SongDB.new.get_song(params[:id])
+end
+
+post '/songs' do
+  content_type :json
+  unless params[:data] && params[:data].length
+    status 400
+    return { "error" => "no data provided" }
+  end
+  id = SongDB.new.create_song(params[:data])
+  { ok: true, id: id }
+end
+
+put '/songs/:id' do
+  content_type :json
+  unless params[:data] && params[:data].length
+    status 400
+    return { "error" => "no data provided" }
+  end
+  SongDB.new.update_song(params[:id], params[:data])
+  { ok: true }
 end
 
 def show_error(error)
