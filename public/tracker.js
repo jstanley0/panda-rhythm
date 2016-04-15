@@ -417,11 +417,35 @@ function focusTrack(track, loc) {
     focusLocation(track, loc.row, loc.col);
 }
 
+function loadShareSong() {
+    var match = window.location.href.match("song=([0-9a-f]+)");
+    if (match) {
+        var id = match[1];
+        $.ajax("/songs/" + id, {
+            success: function(data) {
+                g_Tracker.loadSongData(data);
+            },
+            error: function(jqXHR) {
+                flashError("Couldn't load that song: " + jqXHR.statusText);
+            }
+        });
+        return true;
+    } else {
+        setSongName("");
+        return false;
+    }
+}
+
 function finishInitialization() {
     $('#loading_message').hide();
+    $("#button-open").prop("disabled", false);
+    $("#button-save").prop("disabled", false);
+    $("#button-share").prop("disabled", false);
     $("#button-add-track").prop("disabled", false);
-    var track = g_Tracker.addTrack();
-    focusTrack(track);
+    if (!loadShareSong()) {
+        var track = g_Tracker.addTrack();
+        focusTrack(track);
+    }
 }
 
 function unsupportedBrowser() {
@@ -766,28 +790,9 @@ function initKeyboardNavigation() {
 
 }
 
-function loadShareSong() {
-    var match = window.location.href.match("song=([0-9a-f]+)");
-    if (match) {
-        var id = match[1];
-        $.ajax("/songs/" + id, {
-            success: function(data) {
-                g_Tracker.loadSongData(data);
-            },
-            error: function(jqXHR) {
-                flashError("Couldn't load that song: " + jqXHR.statusText);
-            }
-        });
-    } else {
-        setSongName("");
-    }
-}
-
 $(document).ready(function() {
     initKeyboardNavigation();
     initLocalStorage();
-    loadShareSong();
-
     g_Player = new Player();
     g_Player.loadSounds();
 
