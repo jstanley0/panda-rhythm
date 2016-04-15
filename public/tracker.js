@@ -441,6 +441,7 @@ function finishInitialization() {
     $("#button-open").prop("disabled", false);
     $("#button-save").prop("disabled", false);
     $("#button-share").prop("disabled", false);
+    $("#button-export").prop("disabled", false);
     $("#button-add-track").prop("disabled", false);
     if (!loadShareSong()) {
         var track = g_Tracker.addTrack();
@@ -630,6 +631,66 @@ Player.prototype.playColumn = function(track, column) {
         source.connect(self.audio_context.destination);
         source.start(0);
     });
+};
+
+// song length in *samples*, with a few seconds of padding for sounds struck near the end to decay
+Player.prototype.songLengthSamples = function() {
+    return 88200 + (this.sequence.length * (COLUMNS/4) * 60 * 44100) / this.tempo;
+}
+
+Player.prototype.renderAudio = function(context, filename) {
+    var timeOffset = 0.0;
+    var tickLength = 15.0 / this.tempo;
+    for(var i = 0; i < this.sequence.length; ++i) {
+        var track_name = this.sequence[i];
+        for(var j = 0; j < COLUMNS; ++j) {
+            var els = $('#track_' + track_name + ' td[data-col="' + j + '"] input:checked');
+            var active_sounds = els.map(function(index, el) { return el.getAttribute('data-row'); });
+            active_sounds.each(function(index, sound_index) {
+                var buffer = SOUNDS[parseInt(sound_index)].buffer;
+                var source = context.createBufferSource();
+                source.buffer = buffer;
+                source.connect(context.destination);
+                source.start(timeOffset);
+            });
+            timeOffset += tickLength;
+        }
+    }
+    context.oncomplete = this.savWav.bind(this, filename);
+    context.startRendering();
+}
+
+Player.prototype.savWav = function(filename, ev) {
+    // to see if we have a good buffer, just try and play it outright
+    /*
+    var source = this.audio_context.createBufferSource();
+    source.buffer = ev.renderedBuffer;
+    source.connect(this.audio_context.destination);
+    source.start(0);
+    */
+
+    var wav = audioBufferToWav(ev.renderedBuffer);
+    var blob = new Blob([new DataView(wav)], { type: 'audio/wav' });
+    var url = URL.createObjectURL(blob);
+    var anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+}
+
+Player.prototype.exportSong = function(filename) {
+    var context;
+    if (window.hasOwnProperty('OfflineAudioContext')) {
+        context = new OfflineAudioContext(2, this.songLengthSamples(), 44100);
+    } else if (window.hasOwnProperty('webkitOfflineAudioContext')) {
+        context = new webkitOfflineAudioContext(2, this.songLengthSamples(), 44100);
+    } else {
+        flashError("OfflineAudioContext isn't a thing.  Try upgrading your browser.");
+        return false;
+    }
+    this.renderAudio(context, filename);
+
 };
 
 function wrapAdd(a, b, max) {
@@ -828,6 +889,11 @@ $(document).ready(function() {
 
     $("#button-share").click(function(event) {
         g_Tracker.onShare();
+    });
+
+    $("#button-export").click(function(event) {
+        var filename = current_song ? current_song + ".wav" : "Panda Rhythm.wav";
+        g_Player.exportSong(filename);
     });
 
     $("#button-open").click(function(event) {
