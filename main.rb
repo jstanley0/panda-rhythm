@@ -48,6 +48,7 @@ post '/submit' do
   end
 end
 
+# a test song with tracks A to Z resulted in a 12760-byte payload
 MAX_DATA_LENGTH = 16384
 
 $songdb = SongDB.new

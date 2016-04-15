@@ -257,6 +257,7 @@ var Tracker = React.createClass({
     saveSong: function(name) {
         setSongName(name);
         var song = {
+            name: name,
             sequence: $('#input-track-sequence').val(),
             tempo: parseInt($("#input-tempo").val()),
             tracks: {}
@@ -292,7 +293,6 @@ var Tracker = React.createClass({
             // FIXME: there's got to be a way to defer until the state changes take effect
             // OR MAYBE I SHOULD STOP FIGHTING THE SYSTEM AND JUST USE STATE TO STORE STATE
             setTimeout(function() {
-                setSongName(name);
                 self.loadSongData(song);
             }, 200);
         } else {
@@ -302,6 +302,7 @@ var Tracker = React.createClass({
 
     loadSongData: function(song) {
         var self = this;
+        setSongName(song.name);
         _.each(song.tracks, function(track, name) {
             self.addTrack(name);
         });
