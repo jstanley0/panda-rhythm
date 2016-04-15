@@ -58,16 +58,16 @@ var Track = React.createClass({
             <div className="track">
                 <div className="track-header">
                     <button className="btn btn-danger button-remove-track" data-name={name}>
-                        <span title="Delete" className="glyphicon glyphicon-remove"></span>
+                        <span title="Delete" aria-label="Delete track" className="glyphicon glyphicon-remove"></span>
                     </button>
                     <span className="track-spacer"></span>
                     <span className="track-label">{this.props.name}</span>
                     <span className="track-spacer"></span>
                     <button className="btn btn-normal button-clear-track" data-name={name}>
-                        <span title="Clear" className="glyphicon glyphicon-unchecked"></span>
+                        <span title="Clear" aria-label="Clear track" className="glyphicon glyphicon-unchecked"></span>
                     </button>
                     <button className="btn btn-normal button-copy-track" data-name={name}>
-                        <span title="Copy" className="glyphicon glyphicon-log-out"></span>
+                        <span title="Copy" aria-label="Copy track" className="glyphicon glyphicon-log-out"></span>
                     </button>
                 </div>
                 <table className="track-table" id={"track_" + name}>
