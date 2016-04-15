@@ -16,15 +16,16 @@ class SongDB
   def create_song(data)
     connect do
       id = SecureRandom::hex(8)
-      res = @connection.exec('INSERT INTO songs (id, data) VALUES ($1, $2)', [id, data])
+      token = SecureRandom::hex(8)
+      res = @connection.exec('INSERT INTO songs (id, data, token) VALUES ($1, $2, $3)', [id, data, token])
       raise "failed to insert somehow" unless res.cmdtuples == 1
-      id
+      [id, token]
     end
   end
 
-  def update_song(id, data)
+  def update_song(id, data, token)
     connect do
-      res = @connection.exec('UPDATE songs SET data=$2 WHERE id=$1', [id, data])
+      res = @connection.exec('UPDATE songs SET data=$2 WHERE id=$1 AND token=$3', [id, data, token])
       res.cmdtuples == 1
       raise Sinatra::NotFound unless res.cmdtuples == 1
     end

@@ -57,20 +57,24 @@ post '/songs' do
   content_type :json
   unless params[:data] && params[:data].length
     status 400
-    return { "error" => "no data provided" }
+    return { "error" => "no data provided" }.to_json
   end
-  id = SongDB.new.create_song(params[:data])
-  { ok: true, id: id }
+  id, token = SongDB.new.create_song(params[:data])
+  { "ok" => true, "id" => id, "token" => token }.to_json
 end
 
 put '/songs/:id' do
   content_type :json
   unless params[:data] && params[:data].length
     status 400
-    return { "error" => "no data provided" }
+    return { "error" => "no data provided" }.to_json
   end
-  SongDB.new.update_song(params[:id], params[:data])
-  { ok: true }
+  unless params[:token] && params[:token].length
+    status 401
+    return { "error" => "missing token" }.to_json
+  end
+  SongDB.new.update_song(params[:id], params[:data], params[:token])
+  { "ok" => true }.to_json
 end
 
 def show_error(error)
