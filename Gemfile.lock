@@ -1,11 +1,18 @@
+GIT
+  remote: https://github.com/instructure/ims-lti.git
+  revision: 53612abf45311b3f425e75784dc85fdae2affc12
+  specs:
+    ims-lti (1.1.10)
+      builder
+      oauth (~> 0.4.5)
+
 GEM
   remote: https://rubygems.org/
   specs:
-    byebug (5.0.0)
-      columnize (= 0.9.0)
-    columnize (0.9.0)
+    builder (3.2.2)
     daemons (1.2.3)
     eventmachine (1.0.7)
+    oauth (0.4.7)
     pg (0.18.2)
     rack (1.6.4)
     rack-protection (1.5.3)
@@ -24,7 +31,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  byebug
+  ims-lti!
   pg
   sinatra
   thin
