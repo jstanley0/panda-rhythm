@@ -1,54 +1,63 @@
 require 'pg'
 require 'uri'
+require 'zlib'
 require 'securerandom'
 
 class SongDB
-  attr_accessor :connection, :params
+  class Error < ::StandardError
+    attr_accessor :status, :message
+
+    def initialize(status, message)
+      self.status = status
+      self.message = message
+    end
+  end
 
   def get_song(id)
-    connect do
-      res = @connection.exec_params('SELECT data FROM songs WHERE ID=$1', [id])
-      raise Sinatra::NotFound unless res.ntuples == 1
-      res[0]['data']
+    connect do |conn|
+      conn.exec_params('SELECT data FROM songs WHERE ID=$1', [id], 1) do |result|
+        raise Error.new(404, 'song not found') unless result.ntuples == 1
+        Zlib::inflate(result[0]['data'])
+      end
     end
   end
 
   def create_song(data)
-    connect do
+    connect do |conn|
       id = SecureRandom::hex(8)
       token = SecureRandom::hex(8)
-      res = @connection.exec('INSERT INTO songs (id, data, token) VALUES ($1, $2, $3)', [id, data, token])
-      raise "failed to insert somehow" unless res.cmdtuples == 1
-      [id, token]
+      conn.exec('INSERT INTO songs (id, data, token) VALUES ($1, $2, $3)', [id, compressed_blob(data), token]) do |result|
+        raise Error.new(500, "failed to insert somehow") unless result.cmdtuples == 1
+        [id, token]
+      end
     end
   end
 
   def update_song(id, data, token)
-    connect do
-      res = @connection.exec('UPDATE songs SET data=$2 WHERE id=$1 AND token=$3', [id, data, token])
-      res.cmdtuples == 1
-      raise Sinatra::NotFound unless res.cmdtuples == 1
+    connect do |conn|
+      conn.exec('UPDATE songs SET data=$2 WHERE id=$1 AND token=$3', [id, compressed_blob(data), token]) do |result|
+        raise Error.new(401, 'incorrect token') unless result.cmdtuples == 1
+        true
+      end
     end
   end
 
   private
 
-  # I should learn how connection management/pooling might work in heroku etc.
-  # But for now just connect for each operation.  This dumb thing doesn't talk to the DB much anyhow,
-  # since it uses localStorage for most things :P
+  def compressed_blob(data)
+    { :value => Zlib::deflate(data), :type => 0, :format => 1 }
+  end
+
   def connect
-    begin
-      @connection = PG.connect(connection_params)
-      yield
-    ensure
-      @connection.close if @connection
-    end
+    @connection ||= PG.connect(connection_params)
+    @connection.reset if @connection.status == PG::CONNECTION_BAD
+    yield @connection
   end
 
   def connection_params
     @params ||= begin
       database_url = ENV['DATABASE_URL']
-      raise 'DATABASE_URL not set' unless database_url
+      raise Error.new(500, 'DATABASE_URL not set') unless database_url
       uri = URI.parse(database_url)
       {
           host: uri.host,

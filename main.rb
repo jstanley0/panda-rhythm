@@ -48,9 +48,24 @@ post '/submit' do
   end
 end
 
+MAX_DATA_LENGTH = 16384
+
+$songdb = SongDB.new
+
+def handle_songdb_error
+  begin
+    yield
+  rescue SongDB::Error => e
+    status e.status
+    { "error" => e.message }.to_json
+  end
+end
+
 get '/songs/:id' do
   content_type :json
-  SongDB.new.get_song(params[:id])
+  handle_songdb_error do
+    $songdb.get_song(params[:id])
+  end
 end
 
 post '/songs' do
@@ -59,8 +74,18 @@ post '/songs' do
     status 400
     return { "error" => "no data provided" }.to_json
   end
-  id, token = SongDB.new.create_song(params[:data])
-  { "ok" => true, "id" => id, "token" => token }.to_json
+  if params[:data].length > MAX_DATA_LENGTH
+    status 400
+    return { "error" => "data too long" }.to_json
+  end
+  unless (JSON.parse(params[:data]) rescue false)
+    status 400
+    return { "error" => "invalid song" }.to_json
+  end
+  handle_songdb_error do
+    id, token = $songdb.create_song(params[:data])
+    { "ok" => true, "id" => id, "token" => token }.to_json
+  end
 end
 
 put '/songs/:id' do
@@ -73,8 +98,10 @@ put '/songs/:id' do
     status 401
     return { "error" => "missing token" }.to_json
   end
-  SongDB.new.update_song(params[:id], params[:data], params[:token])
-  { "ok" => true }.to_json
+  handle_songdb_error do
+    $songdb.update_song(params[:id], params[:data], params[:token])
+    { "ok" => true }.to_json
+  end
 end
 
 def show_error(error)

@@ -18,8 +18,33 @@ var SOUNDS = [
 
 var current_song;
 
+function setSongName(name) {
+    current_song = name;
+    document.title = (name ? name : "untitled") + " - Panda Rhythm";
+}
+
 function checkId(track, row, col) {
     return track + "_" + row + "_" + col;
+}
+
+function closeButton() {
+    return $('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>');
+}
+
+function flashError(message) {
+    var $alert = $("<div>").attr("class", "alert alert-danger fade in").text(message);
+    $alert.append(closeButton());
+    $("#alert_container").empty().append($alert);
+}
+
+function flashSuccess(message, link) {
+    var $alert = $("<div>").attr("class", "alert alert-success fade in").text(message + " ");
+    if (link) {
+        var $link = $("<a>").attr("href", link).text(link)
+        $alert.append($link);
+    }
+    $alert.append(closeButton());
+    $("#alert_container").empty().append($alert);
 }
 
 var Track = React.createClass({
@@ -109,21 +134,19 @@ var OpenDialog = React.createClass({
                 onRequestClose={this.closeModal}
                 className="open-modal"
                 overlayClassName="open-modal-overlay">
-                <form action="#">
-                    <div className="form-group">
-                        <label htmlFor="song-select">Select song:</label>
-                        <select ref="songSelect" className="form-control" id="song-select" onChange={this.songChanged}>
-                        {
-                            _.map(this.state.songs, function(name) {
-                                return <option value={name}>{name}</option>
-                            })
-                        }
-                        </select>
-                    </div>
-                    <button type="submit" onClick={this.Ok} className="btn btn-primary" disabled={this.state.disabled}>Open</button>
-                    &ensp;
-                    <button onClick={this.closeModal} className="btn btn-default">Cancel</button>
-                </form>
+                <div className="form-group">
+                    <label htmlFor="song-select">Select song:</label>
+                    <select ref="songSelect" className="form-control" id="song-select" onChange={this.songChanged}>
+                    {
+                        _.map(this.state.songs, function(name) {
+                            return <option value={name}>{name}</option>
+                        })
+                    }
+                    </select>
+                </div>
+                <button type="submit" onClick={this.Ok} className="btn btn-primary" disabled={this.state.disabled}>Open</button>
+                &ensp;
+                <button onClick={this.closeModal} className="btn btn-default">Cancel</button>
             </ReactModal>
         );
     }
@@ -226,13 +249,13 @@ var Tracker = React.createClass({
     },
 
     clearSong: function() {
-        current_song = "";
+        setSongName("");
         this.setState({tracks: []});
         $('#input-track-sequence').val('').trigger('change');
     },
 
     saveSong: function(name) {
-        current_song = name;
+        setSongName(name);
         var song = {
             sequence: $('#input-track-sequence').val(),
             tempo: parseInt($("#input-tempo").val()),
@@ -251,46 +274,55 @@ var Tracker = React.createClass({
         });
         // wai u no store objects, localStorage :P
         var songs = JSON.parse(localStorage.songs);
-        songs[name] = song;
+        if (songs.hasOwnProperty(name)) {
+            _.extend(songs[name], song);
+        } else {
+            songs[name] = song;
+        }
         localStorage.songs = JSON.stringify(songs);
         this.refs.openDialog.setState({songs: _.keys(songs)});
     },
 
     loadSong: function(name) {
+        var self = this;
         var songs = JSON.parse(localStorage.songs);
         var song;
-        var self = this;
         if (song = songs[name]) {
             this.clearSong();
             // FIXME: there's got to be a way to defer until the state changes take effect
             // OR MAYBE I SHOULD STOP FIGHTING THE SYSTEM AND JUST USE STATE TO STORE STATE
             setTimeout(function() {
-                _.each(song.tracks, function(track, name) {
-                    self.addTrack(name);
-                });
-                current_song = name;
-
-                // oh, the humanity
-                setTimeout(function() {
-                    $('#input-tempo').val(song.tempo);
-                    _.each(song.tracks, function(track, name) {
-                        for(var row in SOUNDS) {
-                            var sound = SOUNDS[row].name;
-                            if (track[sound]) {
-                                for(var i = 0; i < COLUMNS; ++i) {
-                                    if (track[sound][i] != ' ') {
-                                        document.getElementById(checkId(name, row, i)).checked = true;
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    $('#input-track-sequence').val(song.sequence).trigger('change');
-                }, 200);
+                setSongName(name);
+                self.loadSongData(song);
             }, 200);
         } else {
             alert('Song not found :(');
         }
+    },
+
+    loadSongData: function(song) {
+        var self = this;
+        _.each(song.tracks, function(track, name) {
+            self.addTrack(name);
+        });
+
+        // oh, the humanity
+        setTimeout(function() {
+            _.each(song.tracks, function(track, name) {
+                for(var row in SOUNDS) {
+                    var sound = SOUNDS[row].name;
+                    if (track[sound]) {
+                        for(var i = 0; i < COLUMNS; ++i) {
+                            if (track[sound][i] != ' ') {
+                                document.getElementById(checkId(name, row, i)).checked = true;
+                            }
+                        }
+                    }
+                }
+            });
+            $('#input-tempo').val(song.tempo).trigger('change');
+            $('#input-track-sequence').val(song.sequence).trigger('change');
+        }, 200);
     },
 
     onOpen: function() {
@@ -302,9 +334,58 @@ var Tracker = React.createClass({
     },
 
     onSave: function() {
-        var name = prompt("Name your masterpiece", current_song);
+        var name = prompt("Enter a name for your song:", current_song);
         if (name) {
-            g_Tracker.saveSong(name);
+            this.saveSong(name);
+            return name;
+        }
+        return null;
+    },
+
+    onShare: function() {
+        var name = this.onSave();
+        if (name) {
+            var songs = JSON.parse(localStorage.songs);
+            var song = songs[name];
+            if (song.hasOwnProperty('id') && song.hasOwnProperty('token')) {
+                // update existing song
+                $.ajax("/songs/" + song.id, {
+                    method: 'PUT',
+                    data: {
+                        token: song.token,
+                        data: JSON.stringify(song, function(k, v) {
+                            return (k == "id" || k == "token") ? undefined : v;
+                        })
+                    },
+                    success: function(data) {
+                        var url = BASE_URL + "?song=" + song.id;
+                        flashSuccess("Song updated!", url);
+                    },
+                    error: function(jqXHR) {
+                        flashError("Failed to update song: " + jqXHR.statusText);
+                    }
+                });
+            } else {
+                // create new song
+                $.ajax("/songs", {
+                    method: 'POST',
+                    data: {
+                        data: JSON.stringify(song)
+                    },
+                    success: function(data) {
+                        // store id and token for next time
+                        songs[name].id = data.id;
+                        songs[name].token = data.token;
+                        localStorage.songs = JSON.stringify(songs);
+
+                        var url = BASE_URL + "?song=" + data.id;
+                        flashSuccess("Song shared successfully!", url);
+                    },
+                    error: function(jqXHR) {
+                        flashError("Failed to share song: " + jqXHR.statusText);
+                    }
+                });
+            }
         }
     }
 });
@@ -684,9 +765,27 @@ function initKeyboardNavigation() {
 
 }
 
+function loadShareSong() {
+    var match = window.location.href.match("song=([0-9a-f]+)");
+    if (match) {
+        var id = match[1];
+        $.ajax("/songs/" + id, {
+            success: function(data) {
+                g_Tracker.loadSongData(data);
+            },
+            error: function(jqXHR) {
+                flashError("Couldn't load that song: " + jqXHR.statusText);
+            }
+        });
+    } else {
+        setSongName("");
+    }
+}
+
 $(document).ready(function() {
     initKeyboardNavigation();
     initLocalStorage();
+    loadShareSong();
 
     g_Player = new Player();
     g_Player.loadSounds();
@@ -719,6 +818,10 @@ $(document).ready(function() {
 
     $("#button-save").click(function(event) {
         g_Tracker.onSave();
+    });
+
+    $("#button-share").click(function(event) {
+        g_Tracker.onShare();
     });
 
     $("#button-open").click(function(event) {

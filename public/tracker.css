@@ -210,3 +210,11 @@ td.play {
     -moz-box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.42);
     box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.42);
 }
+
+#alert_container {
+    position: absolute;
+    width: 600px;
+    top: 10px;
+    left: 50%;
+    margin-left: -300px;
+}
