@@ -422,7 +422,7 @@ function focusTrack(track, loc) {
 }
 
 function loadShareSong() {
-    var match = window.location.href.match("song=([0-9a-f]+)");
+    var match = window.location.href.match("song=([0-9a-z]+)");
     if (match) {
         var id = match[1];
         $.ajax("/songs/" + id, {
