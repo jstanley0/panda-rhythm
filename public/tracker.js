@@ -28,7 +28,7 @@ function checkId(track, row, col) {
 }
 
 function closeButton() {
-    return $('<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>');
+    return $('<a href="#" class="close" data-dismiss="alert" aria-label="close">&emsp;&times;</a>');
 }
 
 function flashError(message) {
@@ -37,10 +37,14 @@ function flashError(message) {
     $("#alert_container").empty().append($alert);
 }
 
-function flashSuccess(message, link) {
+function flashSuccess(message, link, title, download) {
     var $alert = $("<div>").attr("class", "alert alert-success fade in").text(message + " ");
     if (link) {
-        var $link = $("<a>").attr("href", link).text(link)
+        var $link = $("<a>").attr("href", link);
+        $link.text(title || link);
+        if (download) {
+            $link.attr("download", download);
+        }
         $alert.append($link);
     }
     $alert.append(closeButton());
@@ -672,11 +676,7 @@ Player.prototype.savWav = function(filename, ev) {
     var wav = audioBufferToWav(ev.renderedBuffer);
     var blob = new Blob([new DataView(wav)], { type: 'audio/wav' });
     var url = URL.createObjectURL(blob);
-    var anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    flashSuccess("Download WAV file: ", url, filename, filename);
 }
 
 Player.prototype.exportSong = function(filename) {
