@@ -156,6 +156,51 @@ var OpenDialog = React.createClass({
     }
 });
 
+var PromptDialog = React.createClass({
+    getInitialState: function() {
+        return { isOpen: false };
+    },
+
+    openModal: function(initial_value, ok_text, ok_callback) {
+        this.setState({isOpen: true, value: initial_value, okText: ok_text, onOk: ok_callback});
+    },
+
+    afterOpenModal: function() {
+        this.refs.textInput.focus();
+    },
+
+    closeModal: function() {
+        this.setState({isOpen: false});
+    },
+
+    handleChange: function(event) {
+        this.setState({value: event.target.value, disabled: !event.target.value});
+    },
+
+    Ok: function() {
+        this.closeModal();
+        this.state.onOk(this.state.value);
+    },
+
+    render: function() {
+        return (
+            <ReactModal isOpen={this.state.isOpen}
+                onRequestClose={this.closeModal}
+                onAfterOpen={this.afterOpenModal}
+                className="open-modal"
+                overlayClassName="open-modal-overlay">
+                <div className="form-group">
+                    <label htmlFor="text-input">{this.props.promptText}</label>
+                    <input id="text-input" ref="textInput" className="form-control" value={this.state.value} onChange={this.handleChange}/>
+                </div>
+                <button type="submit" onClick={this.Ok} className="btn btn-primary" disabled={this.state.disabled}>{this.state.okText}</button>
+                &ensp;
+                <button onClick={this.closeModal} className="btn btn-default">Cancel</button>
+            </ReactModal>
+        );
+    }
+});
+
 var g_Tracker;
 var Tracker = React.createClass({
     getInitialState: function() {
@@ -178,6 +223,7 @@ var Tracker = React.createClass({
                     {this.state.tracks}
                 </div>
                 <OpenDialog ref="openDialog" onSongSelected={this.onSongSelected}/>
+                <PromptDialog ref="saveDialog" promptText='Enter song name:'/>
             </div>
         );
     },
@@ -339,58 +385,56 @@ var Tracker = React.createClass({
     },
 
     onSave: function() {
-        var name = prompt("Enter a name for your song:", current_song);
-        if (name) {
-            this.saveSong(name);
-            return name;
-        }
-        return null;
+        this.refs.saveDialog.openModal(current_song, "Save", this.saveSong.bind(this));
     },
 
     onShare: function() {
-        var name = this.onSave();
-        if (name) {
-            var songs = JSON.parse(localStorage.songs);
-            var song = songs[name];
-            if (song.hasOwnProperty('id') && song.hasOwnProperty('token')) {
-                // update existing song
-                $.ajax("/songs/" + song.id, {
-                    method: 'PUT',
-                    data: {
-                        token: song.token,
-                        data: JSON.stringify(song, function(k, v) {
-                            return (k == "id" || k == "token") ? undefined : v;
-                        })
-                    },
-                    success: function(data) {
-                        var url = BASE_URL + "?song=" + song.id;
-                        flashSuccess("Song updated!", url);
-                    },
-                    error: function(jqXHR) {
-                        flashError("Failed to update song: " + jqXHR.statusText);
-                    }
-                });
-            } else {
-                // create new song
-                $.ajax("/songs", {
-                    method: 'POST',
-                    data: {
-                        data: JSON.stringify(song)
-                    },
-                    success: function(data) {
-                        // store id and token for next time
-                        songs[name].id = data.id;
-                        songs[name].token = data.token;
-                        localStorage.songs = JSON.stringify(songs);
+        this.refs.saveDialog.openModal(current_song, "Share", this.shareSong.bind(this));
+    },
 
-                        var url = BASE_URL + "?song=" + data.id;
-                        flashSuccess("Song shared successfully!", url);
-                    },
-                    error: function(jqXHR) {
-                        flashError("Failed to share song: " + jqXHR.statusText);
-                    }
-                });
-            }
+    shareSong: function(name)
+    {
+        this.saveSong(name);
+        var songs = JSON.parse(localStorage.songs);
+        var song = songs[name];
+        if (song.hasOwnProperty('id') && song.hasOwnProperty('token')) {
+            // update existing song
+            $.ajax("/songs/" + song.id, {
+                method: 'PUT',
+                data: {
+                    token: song.token,
+                    data: JSON.stringify(song, function(k, v) {
+                        return (k == "id" || k == "token") ? undefined : v;
+                    })
+                },
+                success: function(data) {
+                    var url = BASE_URL + "?song=" + song.id;
+                    flashSuccess("Song updated!", url);
+                },
+                error: function(jqXHR) {
+                    flashError("Failed to update song: " + jqXHR.statusText);
+                }
+            });
+        } else {
+            // create new song
+            $.ajax("/songs", {
+                method: 'POST',
+                data: {
+                    data: JSON.stringify(song)
+                },
+                success: function(data) {
+                    // store id and token for next time
+                    songs[name].id = data.id;
+                    songs[name].token = data.token;
+                    localStorage.songs = JSON.stringify(songs);
+
+                    var url = BASE_URL + "?song=" + data.id;
+                    flashSuccess("Song shared successfully!", url);
+                },
+                error: function(jqXHR) {
+                    flashError("Failed to share song: " + jqXHR.statusText);
+                }
+            });
         }
     }
 });
