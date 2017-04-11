@@ -118,11 +118,8 @@ end
 def authorize!
   if key = params['oauth_consumer_key']
     if secret = $oauth_creds[key]
-      @tp = IMS::LTI::ToolProvider.new(key, secret, params)
+      @authenticator = IMS::LTI::Services::MessageAuthenticator.new(request.url, params, secret)
     else
-      @tp = IMS::LTI::ToolProvider.new(nil, nil, params)
-      @tp.lti_msg = "Your consumer didn't use a recognized key."
-      @tp.lti_errorlog = "You did it wrong!"
       show_error "Consumer key wasn't recognized"
       return false
     end
@@ -131,25 +128,6 @@ def authorize!
     return false
   end
 
-  if !@tp.valid_request?(request)
-    show_error "The OAuth signature was invalid"
-    return false
-  end
-
-  if Time.now.utc.to_i - @tp.request_oauth_timestamp.to_i > 60*60
-    show_error "Your request is too old."
-    return false
-  end
-
-  if was_nonce_used_in_last_x_minutes?(@tp.request_oauth_nonce, 60)
-    show_error "Why are you reusing the nonce?"
-    return false
-  end
-
-  return true
+  @authenticator.valid_signature?
 end
 
-def was_nonce_used_in_last_x_minutes?(nonce, minutes=60)
-  # nope. not gonna bother for hack week :P
-  false
-end
