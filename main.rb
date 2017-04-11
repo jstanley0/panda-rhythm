@@ -6,6 +6,9 @@ require 'net/http'
 require 'json'
 require_relative 'song_db'
 
+# the not-very-secrets
+$oauth_creds = {"0bd73cbad2d5d4e690de7c8eb72d3c50" => "f48fe8d1121ba068638fd27796cff27a"}
+
 # otherwise SAMEORIGIN is set and the frame can't be embedded in Canvas
 set :protection, :except => :frame_options
 

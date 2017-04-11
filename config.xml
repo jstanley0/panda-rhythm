@@ -13,12 +13,15 @@
     <blti:icon></blti:icon>
     <blti:launch_url>https://panda-rhythm.herokuapp.com/</blti:launch_url>
     <blti:extensions platform="canvas.instructure.com">
-      <lticm:property name="tool_id">ActivePanda_200C9A66</lticm:property>
+      <lticm:property name="tool_id">PandaRhythm_NX74205</lticm:property>
       <lticm:property name="privacy_level">public</lticm:property>
       <lticm:property name="domain">https://panda-rhythm.herokuapp.com/</lticm:property>
       <lticm:options name="homework_submission">
         <lticm:property name="url">https://panda-rhythm.herokuapp.com/</lticm:property>
         <lticm:property name="text">PandaRhythm</lticm:property>
+        <lticm:property name="enabled">true</lticm:property>
+      </lticm:options>
+      <lticm:options name="course_navigation">
         <lticm:property name="enabled">true</lticm:property>
       </lticm:options>
     </blti:extensions>
