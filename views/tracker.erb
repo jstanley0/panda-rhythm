@@ -1,8 +1,19 @@
+<% submission = nil
+   if @tp
+     submission = @tp.outcome_service? %>
+<script>
+ LAUNCH_PARAMS=<%= @tp.to_params.to_json %>
+</script>
+<% end %>
 <script type="text/jsx" src="/tracker.js"></script>
 <link rel="stylesheet" type="text/css" href="/tracker.css">
 <div id="alert_container"></div>
 <h1 class="page-header"><img src="panda-rhythm.png" width="282" height="128" alt="Rockin' Panda by Sarah Stanley">Panda Rhythm</h1>
 <div class="button-box">
+  <% if submission %>
+    <button id="button-submit" disabled class="btn btn-submit"><span aria-label="Submit" title="Submit" class="glyphicon glyphicon-circle-arrow-up"/></button>
+    &emsp;
+  <% end %>
   <button id="button-open" disabled class="btn btn-global"><span aria-label="Open" title="Open" class="glyphicon glyphicon-folder-open"></button>
   <button id="button-save" disabled class="btn btn-global"><span aria-label="Save" title="Save" class="glyphicon glyphicon-floppy-disk"></button>
   <button id="button-share" disabled class="btn btn-global"><span aria-label="Share" title="Share" class="glyphicon glyphicon-cloud-upload"></button>

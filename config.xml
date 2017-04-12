@@ -23,6 +23,7 @@
       </lticm:options>
       <lticm:options name="course_navigation">
         <lticm:property name="enabled">true</lticm:property>
+        <lticm:property name="url">https://panda-rhythm.herokuapp.com/</lticm:property>
       </lticm:options>
     </blti:extensions>
     <cartridge_bundle identifierref="BLTI001_Bundle"/>

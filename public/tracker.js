@@ -392,11 +392,16 @@ var Tracker = React.createClass({
         this.refs.saveDialog.openModal(current_song, "Share", this.shareSong.bind(this));
     },
 
-    shareSong: function(name)
+    onSubmit: function() {
+        this.refs.saveDialog.openModal(current_song, "Submit Assignment", this.submitSong.bind(this));
+    },
+
+    shareSong: function(name, suppressNotify)
     {
         this.saveSong(name);
         var songs = JSON.parse(localStorage.songs);
         var song = songs[name];
+        var dfd = $.Deferred();
         if (song.hasOwnProperty('id') && song.hasOwnProperty('token')) {
             // update existing song
             $.ajax("/songs/" + song.id, {
@@ -408,11 +413,16 @@ var Tracker = React.createClass({
                     })
                 },
                 success: function(data) {
-                    var url = BASE_URL + "?song=" + song.id;
-                    flashSuccess("Song updated!", url);
+                    dfd.resolveWith(song.id);
+
+                    if (!suppressNotify) {
+                        var url = BASE_URL + "?song=" + song.id;
+                        flashSuccess("Song updated!", url);
+                    }
                 },
                 error: function(jqXHR) {
                     flashError("Failed to update song: " + jqXHR.statusText);
+                    dfd.reject();
                 }
             });
         } else {
@@ -424,18 +434,43 @@ var Tracker = React.createClass({
                 },
                 success: function(data) {
                     // store id and token for next time
+                    dfd.resolveWith(data.id);
                     songs[name].id = data.id;
                     songs[name].token = data.token;
                     localStorage.songs = JSON.stringify(songs);
 
-                    var url = BASE_URL + "?song=" + data.id;
-                    flashSuccess("Song shared successfully!", url);
+                    if (!suppressNotify) {
+                        var url = BASE_URL + "?song=" + data.id;
+                        flashSuccess("Song shared successfully!", url);
+                    }
                 },
                 error: function(jqXHR) {
                     flashError("Failed to share song: " + jqXHR.statusText);
+                    dfd.reject();
                 }
             });
         }
+        return dfd;
+    },
+
+    submitSong: function(name)
+    {
+        this.saveSong(name);
+        this.shareSong(name, true).then(function(id) {
+            $.ajax("/submit", {
+               method: 'POST',
+               data: {
+                 song_id: id,
+                 launch_params: LAUNCH_PARAMS
+               },
+               success: function(data) {
+                 flashSuccess('Assignment submitted!');
+               },
+               error: function(jqXHR) {
+                 flashError("Failed to submit song: " + jqXHR.statusText);
+               }
+            });
+        });
     }
 });
 
@@ -491,6 +526,7 @@ function finishInitialization() {
     $("#button-share").prop("disabled", false);
     $("#button-export").prop("disabled", false);
     $("#button-add-track").prop("disabled", false);
+    $("#button-submit").prop("disabled", false);
     if (!loadShareSong()) {
         var track = g_Tracker.addTrack();
         focusTrack(track);
@@ -933,6 +969,10 @@ $(document).ready(function() {
 
     $("#button-share").click(function(event) {
         g_Tracker.onShare();
+    });
+
+    $("#button-submit").click(function(event) {
+        g_Tracker.onSubmit();
     });
 
     $("#button-export").click(function(event) {

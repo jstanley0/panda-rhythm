@@ -28,6 +28,20 @@
     color: cornsilk;
 }
 
+.btn-submit {
+    color: white;
+    background-color: darkgreen;
+}
+
+.btn-submit:hover {
+    color: white;
+    background-color: forestgreen;
+}
+
+.btn-submit:focus {
+    color: cornsilk;
+}
+
 .player-inputs label {
     padding-left: 10px;
 }

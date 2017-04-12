@@ -19,12 +19,11 @@ end
 
 post '/' do
   return erb :error unless authorize!
+  return erb(:static, :layout => false) if @env['HTTP_REFERER'].include?('/assignments/') unless @tp.outcome_service?
   erb :tracker
 end
 
 post '/submit' do
-  puts params.inspect
-
   launch_params = params['launch_params']
   if launch_params
     key = launch_params['oauth_consumer_key']
@@ -36,17 +35,25 @@ post '/submit' do
   @tp = IMS::LTI::ToolProvider.new(key, $oauth_creds[key], launch_params)
   @tp.extend IMS::LTI::Extensions::OutcomeData::ToolProvider
 
+  if !@tp.valid_request?(request)
+    show_error "The OAuth signature was invalid"
+    return false
+  end
+
   if !@tp.outcome_service?
-    show_error "This tool wasn't lunched as an outcome service... mmm, lunch."
+    show_error "This tool wasn't launched as an outcome service"
     return erb :error
   end
 
-  @points_possible = launch_params['custom_canvas_assignment_points_possible'].to_f || 1
-  score = [1, (params['activity']['score'].to_f / @points_possible).round(4)].min
-  res = @tp.post_replace_result_with_data!(score, "cdata_text" => erb(:submission, layout: false))
+  unless params['song_id'].present?
+    show_error "Missing song_id"
+    return erb :error
+  end
+
+  res = @tp.post_replace_result_with_data!(nil, "lti_launch_url" => "#{request.base_url}?review=1&song_id=#{params['song_id']}")
   if res.success?
     content_type :json
-    { placeholder: "watch this space" }
+    { song_id: params['song_id'] }
   else
     show_error res.description
   end
