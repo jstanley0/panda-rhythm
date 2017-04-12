@@ -28,34 +28,26 @@ post '/submit' do
   if launch_params
     key = launch_params['oauth_consumer_key']
   else
-    show_error "The tool never launched"
-    return erb :error
+    return ajax_error "The tool never launched", 400
   end
 
   @tp = IMS::LTI::ToolProvider.new(key, $oauth_creds[key], launch_params)
   @tp.extend IMS::LTI::Extensions::OutcomeData::ToolProvider
 
-  if !@tp.valid_request?(request)
-    show_error "The OAuth signature was invalid"
-    return false
-  end
-
   if !@tp.outcome_service?
-    show_error "This tool wasn't launched as an outcome service"
-    return erb :error
+    return ajax_error "This tool wasn't launched as an outcome service", 400
   end
 
-  unless params['song_id'].present?
-    show_error "Missing song_id"
-    return erb :error
+  unless params['song_id']
+    return ajax_error "Missing song_id", 400
   end
 
   res = @tp.post_replace_result_with_data!(nil, "lti_launch_url" => "#{request.base_url}?review=1&song_id=#{params['song_id']}")
   if res.success?
     content_type :json
-    { song_id: params['song_id'] }
+    { "ok" => true, "song_id" => params['song_id'] }.to_json
   else
-    show_error res.description
+    ajax_error res.description, 500
   end
 end
 
@@ -121,6 +113,12 @@ def show_error(error)
   content_type :html
   @message = error
   erb :error
+end
+
+def ajax_error(message, status_code)
+  status status_code
+  content_type :json
+  { "error" => message }.to_json
 end
 
 def authorize!

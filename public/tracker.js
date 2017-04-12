@@ -413,7 +413,7 @@ var Tracker = React.createClass({
                     })
                 },
                 success: function(data) {
-                    dfd.resolveWith(song.id);
+                    dfd.resolve(song.id);
 
                     if (!suppressNotify) {
                         var url = BASE_URL + "?song=" + song.id;
@@ -434,7 +434,7 @@ var Tracker = React.createClass({
                 },
                 success: function(data) {
                     // store id and token for next time
-                    dfd.resolveWith(data.id);
+                    dfd.resolve(data.id);
                     songs[name].id = data.id;
                     songs[name].token = data.token;
                     localStorage.songs = JSON.stringify(songs);
