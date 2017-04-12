@@ -4,6 +4,7 @@ require 'rack'
 require 'oauth/request_proxy/rack_request'
 require 'net/http'
 require 'json'
+require 'byebug'
 require_relative 'song_db'
 
 # the not-very-secrets
@@ -118,7 +119,7 @@ end
 def authorize!
   if key = params['oauth_consumer_key']
     if secret = $oauth_creds[key]
-      @authenticator = IMS::LTI::Services::MessageAuthenticator.new(request.url, params, secret)
+      @tp = IMS::LTI::ToolProvider.new(key, secret, params)
     else
       show_error "Consumer key wasn't recognized"
       return false
@@ -128,6 +129,10 @@ def authorize!
     return false
   end
 
-  @authenticator.valid_signature?
-end
+  if !@tp.valid_request?(request) || @tp.request_oauth_timestamp.to_i < Time.now.to_i - 60*5
+    show_error "The OAuth signature was invalid"
+    return false
+  end
 
+  true
+end

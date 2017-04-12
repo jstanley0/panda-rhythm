@@ -6,7 +6,7 @@ gem 'sinatra'
 gem 'oauth'
 gem 'thin'
 gem 'pg'
-gem 'ims-lti', :git => "https://github.com/instructure/ims-lti.git"
+gem 'ims-lti', '~>1.2'
 gem 'byebug'
 # nope, they make this difficult
 #gem 'cloudgate'
