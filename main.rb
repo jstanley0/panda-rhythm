@@ -42,7 +42,7 @@ post '/submit' do
     return ajax_error "Missing song_id", 400
   end
 
-  res = @tp.post_replace_result_with_data!(nil, "lti_launch_url" => "#{request.base_url}?review=1&song_id=#{params['song_id']}")
+  res = @tp.post_replace_result_with_data!(nil, "lti_launch_url" => "#{request.base_url}?review=1&song=#{params['song_id']}")
   if res.success?
     content_type :json
     { "ok" => true, "song_id" => params['song_id'] }.to_json
