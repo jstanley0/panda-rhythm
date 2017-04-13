@@ -409,13 +409,13 @@ var Tracker = React.createClass({
         this.refs.saveDialog.openModal(current_song, "Submit Assignment", this.submitSong.bind(this));
     },
 
-    shareSong: function(name, suppressNotify)
+    shareSong: function(name, forSubmission)
     {
         this.saveSong(name);
         var songs = JSON.parse(localStorage.songs);
         var song = songs[name];
         var dfd = $.Deferred();
-        if (song.hasOwnProperty('id') && song.hasOwnProperty('token')) {
+        if (!forSubmission && song.hasOwnProperty('id') && song.hasOwnProperty('token')) {
             // update existing song
             $.ajax("/songs/" + song.id, {
                 method: 'PUT',
@@ -427,11 +427,8 @@ var Tracker = React.createClass({
                 },
                 success: function(data) {
                     dfd.resolve(song.id);
-
-                    if (!suppressNotify) {
-                        var url = BASE_URL + "?song=" + song.id;
-                        flashSuccess("Song updated!", url);
-                    }
+                    var url = BASE_URL + "?song=" + song.id;
+                    flashSuccess("Song updated!", url);
                 },
                 error: function(jqXHR) {
                     flashError("Failed to update song: " + jqXHR.statusText);
@@ -448,11 +445,12 @@ var Tracker = React.createClass({
                 success: function(data) {
                     // store id and token for next time
                     dfd.resolve(data.id);
-                    songs[name].id = data.id;
-                    songs[name].token = data.token;
-                    localStorage.songs = JSON.stringify(songs);
 
-                    if (!suppressNotify) {
+                    if (!forSubmission) {
+                        songs[name].id = data.id;
+                        songs[name].token = data.token;
+                        localStorage.songs = JSON.stringify(songs);
+
                         var url = BASE_URL + "?song=" + data.id;
                         flashSuccess("Song shared successfully!", url);
                     }
