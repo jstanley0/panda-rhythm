@@ -522,6 +522,10 @@ function loadShareSong() {
         var id = match[1];
         $.ajax("/songs/" + id, {
             success: function(data) {
+                var $header = $('.small-header');
+                if ($header.length) {
+                    $header.text(data.name + " - PandaRhythm");
+                }
                 g_Tracker.loadSongData(data);
             },
             error: function(jqXHR) {
