@@ -8,5 +8,6 @@ gem 'thin'
 gem 'pg'
 gem 'ims-lti', '~>1.2'
 gem 'byebug'
+gem 'babel-transpiler'
 # nope, they make this difficult
 #gem 'cloudgate'

@@ -1,4 +1,4 @@
-/** @jsx React.DOM */
+var g_Player;
 
 var COLUMNS = 16;
 
@@ -111,8 +111,6 @@ var Track = React.createClass({
         );
     }
 });
-
-ReactModal.setAppElement('#tracker-container');
 
 var OpenDialog = React.createClass({
     getInitialState: function() {
@@ -811,7 +809,7 @@ function initKeyboardNavigation() {
         //console.log(event);
 
         // ** global shortcuts
-        if (!REVIEW) {
+        if (!window.REVIEW) {
             // open
             if (event.keyCode == 79 && (event.ctrlKey || event.metaKey)) {
                 event.preventDefault();
@@ -862,7 +860,7 @@ function initKeyboardNavigation() {
             return;
         }
 
-        if (!REVIEW) {
+        if (!window.REVIEW) {
             // delete track -
             if (event.keyCode == 109 || event.keyCode == 189 || event.keyCode == 173) {
                 var toFocus = g_Tracker.nextTrack(loc.track, 1);
@@ -951,6 +949,7 @@ function initKeyboardNavigation() {
 }
 
 $(document).ready(function() {
+    ReactModal.setAppElement('#tracker-container');
     initKeyboardNavigation();
     initLocalStorage();
     g_Player = new Player();
