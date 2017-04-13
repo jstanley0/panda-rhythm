@@ -19,7 +19,8 @@ end
 
 post '/' do
   return erb :error unless authorize!
-  return erb(:static, :layout => false) if @env['HTTP_REFERER'].include?('/assignments/') unless @tp.outcome_service?
+  @review = (params['review'] == '1')
+  @small_header = true if @env['HTTP_REFERER'].include?('/assignments/') || @review
   erb :tracker
 end
 

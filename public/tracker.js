@@ -61,18 +61,30 @@ var Track = React.createClass({
         return (
             <div className="track">
                 <div className="track-header">
-                    <button className="btn btn-danger button-remove-track" data-name={name}>
-                        <span title="Delete" aria-label="Delete track" className="glyphicon glyphicon-remove"></span>
-                    </button>
+                    {
+                        window.REVIEW ? null : (
+                            <button className="btn btn-danger button-remove-track" data-name={name}>
+                                <span title="Delete" aria-label="Delete track" className="glyphicon glyphicon-remove"></span>
+                            </button>
+                        )
+                    }
                     <span className="track-spacer"></span>
                     <span className="track-label">{this.props.name}</span>
                     <span className="track-spacer"></span>
-                    <button className="btn btn-normal button-clear-track" data-name={name}>
-                        <span title="Clear" aria-label="Clear track" className="glyphicon glyphicon-unchecked"></span>
-                    </button>
-                    <button className="btn btn-normal button-copy-track" data-name={name}>
-                        <span title="Copy" aria-label="Copy track" className="glyphicon glyphicon-log-out"></span>
-                    </button>
+                    {
+                        window.REVIEW ? null : (
+                            <button className="btn btn-normal button-clear-track" data-name={name}>
+                                <span title="Clear" aria-label="Clear track" className="glyphicon glyphicon-unchecked"></span>
+                            </button>
+                        )
+                    }
+                    {
+                        window.REVIEW ? null : (
+                            <button className="btn btn-normal button-copy-track" data-name={name}>
+                                <span title="Copy" aria-label="Copy track" className="glyphicon glyphicon-log-out"></span>
+                            </button>
+                        )
+                    }
                 </div>
                 <table className="track-table" id={"track_" + name}>
                     {
@@ -82,7 +94,11 @@ var Track = React.createClass({
                                     _.range(COLUMNS).map(function(col) {
                                         var id = checkId(name, row, col);
                                         return <td key={col} data-col={col}>
-                                            <input id={id} data-col={col} data-row={row} type="checkbox"/>
+                                            {
+                                                window.REVIEW ?
+                                                <input id={id} data-col={col} data-row={row} type="checkbox" aria-disabled="true" className="read-only"/> :
+                                                <input id={id} data-col={col} data-row={row} type="checkbox"/>
+                                            }
                                             <label htmlFor={id}><span/></label>
                                             </td>
                                     })
@@ -796,19 +812,20 @@ function initKeyboardNavigation() {
         //console.log(event);
 
         // ** global shortcuts
+        if (!REVIEW) {
+            // open
+            if (event.keyCode == 79 && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                g_Tracker.onOpen();
+                return;
+            }
 
-        // open
-        if (event.keyCode == 79 && (event.ctrlKey || event.metaKey)) {
-            event.preventDefault();
-            g_Tracker.onOpen();
-            return;
-        }
-
-        // save
-        if (event.keyCode == 83 && (event.ctrlKey || event.metaKey)) {
-            event.preventDefault();
-            g_Tracker.onSave();
-            return;
+            // save
+            if (event.keyCode == 83 && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                g_Tracker.onSave();
+                return;
+            }
         }
 
         // play / pause `
@@ -820,20 +837,14 @@ function initKeyboardNavigation() {
         // help ?
         if (event.shiftKey && event.keyCode == 191) {
             $("#button-help").trigger('click');
+            return;
         }
 
 
         // ** location-aware global shortcuts
         var loc = focusedLocation();
 
-        // add track +
-        if (event.keyCode == 107 || event.keyCode == 187 || event.keyCode == 61) {
-            var track = g_Tracker.addTrack();
-            focusTrack(track, loc);
-            return;
-        }
-
-        if (!loc.track) {
+         if (!loc.track) {
             // [ or ] when not in a track will select the last or first track
             if (event.keyCode == 219 || event.keyCode == 221) {
                 var allTracks = g_Tracker.allTrackNames();
@@ -845,14 +856,6 @@ function initKeyboardNavigation() {
 
         // ** local shortcuts
 
-        // delete track -
-        if (event.keyCode == 109 || event.keyCode == 189 || event.keyCode == 173) {
-            var toFocus = g_Tracker.nextTrack(loc.track, 1);
-            g_Tracker.removeTrack(loc.track);
-            focusLocation(toFocus, loc.row, loc.col);
-            return;
-        }
-
         // previous track [ / next track ]
         if (event.keyCode == 219 || event.keyCode == 221) {
             var newTrack = g_Tracker.nextTrack(loc.track, event.keyCode - 220);
@@ -860,45 +863,62 @@ function initKeyboardNavigation() {
             return;
         }
 
-        // copy track \
-        if (event.keyCode == 220) {
-            focusTrack(g_Tracker.copyTrack(loc.track), loc);
-            return;
-        }
+        if (!REVIEW) {
+            // delete track -
+            if (event.keyCode == 109 || event.keyCode == 189 || event.keyCode == 173) {
+                var toFocus = g_Tracker.nextTrack(loc.track, 1);
+                g_Tracker.removeTrack(loc.track);
+                focusLocation(toFocus, loc.row, loc.col);
+                return;
+            }
 
-        // clear track ;
-        if (event.keyCode == 186 || event.keyCode == 59) {
-            g_Tracker.clearTrack(loc.track, event.shiftKey ? loc.col : 0);
-            return;
-        }
+            // add track +
+            if (event.keyCode == 107 || event.keyCode == 187 || event.keyCode == 61) {
+                var track = g_Tracker.addTrack();
+                focusTrack(track, loc);
+                return;
+            }
 
-        if (event.keyCode >= 48 /* 0 */ && event.keyCode <= 57 /* 9 */ ||
-            event.keyCode >= 96 /* 0 */ && event.keyCode <= 105 /* 9 */) {
-            var number = event.keyCode - ((event.keyCode >= 96) ? 96 : 48);
-            if (event.shiftKey) {
-                focusLocation(loc.track, number, loc.col);
-            } else {
-                $('#track_' + loc.track + ' tr[data-row="' + loc.row + '"] input').prop("checked", false);
-                if (number != 0) {
-                    $('#track_' + loc.track + ' tr[data-row="' + loc.row + '"] td:nth-of-type(' + number + 'n+1) input').prop("checked", true);
+            // copy track \
+            if (event.keyCode == 220) {
+                focusTrack(g_Tracker.copyTrack(loc.track), loc);
+                return;
+            }
+
+            // clear track ;
+            if (event.keyCode == 186 || event.keyCode == 59) {
+                g_Tracker.clearTrack(loc.track, event.shiftKey ? loc.col : 0);
+                return;
+            }
+
+            if (event.keyCode >= 48 /* 0 */ && event.keyCode <= 57 /* 9 */ ||
+                event.keyCode >= 96 /* 0 */ && event.keyCode <= 105 /* 9 */) {
+                var number = event.keyCode - ((event.keyCode >= 96) ? 96 : 48);
+                if (event.shiftKey) {
+                    focusLocation(loc.track, number, loc.col);
+                } else {
+                    $('#track_' + loc.track + ' tr[data-row="' + loc.row + '"] input').prop("checked", false);
+                    if (number != 0) {
+                        $('#track_' + loc.track + ' tr[data-row="' + loc.row + '"] td:nth-of-type(' + number + 'n+1) input').prop("checked", true);
+                    }
                 }
+                return;
             }
-            return;
-        }
 
-        if (event.keyCode == 188 /* , */ || event.keyCode == 190 /* . */) {
-            // select / deselect one element and move to the next
-            loc.element.checked = (event.keyCode == 188);
-            var newRow, newCol;
-            if (event.shiftKey) {
-                newCol = (loc.row == SOUNDS.length - 1) ? wrapAdd(loc.col, 1, COLUMNS) : loc.col;
-                newRow = (loc.row < SOUNDS.length - 1) ? loc.row + 1 : 0;
-            } else {
-                newCol = (loc.col < COLUMNS - 1) ? loc.col + 1 : 0;
-                newRow = (loc.col == COLUMNS - 1) ? wrapAdd(loc.row, 1, SOUNDS.length) : loc.row;
+            if (event.keyCode == 188 /* , */ || event.keyCode == 190 /* . */) {
+                // select / deselect one element and move to the next
+                loc.element.checked = (event.keyCode == 188);
+                var newRow, newCol;
+                if (event.shiftKey) {
+                    newCol = (loc.row == SOUNDS.length - 1) ? wrapAdd(loc.col, 1, COLUMNS) : loc.col;
+                    newRow = (loc.row < SOUNDS.length - 1) ? loc.row + 1 : 0;
+                } else {
+                    newCol = (loc.col < COLUMNS - 1) ? loc.col + 1 : 0;
+                    newRow = (loc.col == COLUMNS - 1) ? wrapAdd(loc.row, 1, SOUNDS.length) : loc.row;
+                }
+                focusLocation(loc.track, newRow, newCol);
+                return;
             }
-            focusLocation(loc.track, newRow, newCol);
-            return;
         }
 
         // navigation
@@ -988,6 +1008,10 @@ $(document).ready(function() {
         g_Tracker.clearSong();
         var track = g_Tracker.addTrack();
         focusTrack(track);
+    });
+
+    $('#tracker-container').on("click", "input.read-only", function (event) {
+        event.preventDefault();
     });
 
     $("#tracker-container").on("click", ".button-remove-track", function(event) {

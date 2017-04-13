@@ -30,12 +30,13 @@
 
 .btn-submit {
     color: white;
-    background-color: darkgreen;
+    background-color: #008EE2;
+    font-weight: bold;
 }
 
 .btn-submit:hover {
-    color: white;
-    background-color: forestgreen;
+    color: cornsilk;
+    background-color: #0091e6;
 }
 
 .btn-submit:focus {
@@ -118,6 +119,7 @@
     text-align: center;
     font-size: xx-large;
     color: white;
+    margin: 12px;
 }
 
 .track-spacer {
@@ -148,6 +150,16 @@ td.play {
 .page-header img {
     vertical-align: baseline;
     margin-right: 20px;
+}
+
+.small-header {
+    padding-top: 15px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: large;
+    color: darkslategrey;
+    border-bottom: 1px solid slategrey;
 }
 
 /* there are many wrong ways to do this on the internet.
