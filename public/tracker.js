@@ -271,13 +271,13 @@ var Tracker = React.createClass({
         return allNames[wrapAdd(index, direction, allNames.length)];
     },
 
-    addTrack: function(letter) {
+    addTrack: function(letter, callback) {
         letter = letter || this.newTrackName();
         if (!letter) {
             return;
         }
         this.state.tracks.push(<Track key={letter} name={letter}/>);
-        this.setState(this.state);
+        this.setState(this.state, callback);
         var sequence = $('#input-track-sequence')
         sequence.val(sequence.val() + letter);
         sequence.trigger('change');
@@ -315,9 +315,13 @@ var Tracker = React.createClass({
     },
 
     clearSong: function() {
-        setSongName("");
-        this.setState({tracks: []});
-        $('#input-track-sequence').val('').trigger('change');
+        var dfd = $.Deferred();
+        this.setState({tracks: []}, function() {
+            setSongName("");
+            $('#input-track-sequence').val('').trigger('change');
+            dfd.resolve();
+        });
+        return dfd;
     },
 
     saveSong: function(name) {
@@ -355,12 +359,9 @@ var Tracker = React.createClass({
         var songs = JSON.parse(localStorage.songs);
         var song;
         if (song = songs[name]) {
-            this.clearSong();
-            // FIXME: there's got to be a way to defer until the state changes take effect
-            // OR MAYBE I SHOULD STOP FIGHTING THE SYSTEM AND JUST USE STATE TO STORE STATE
-            setTimeout(function() {
-                self.loadSongData(song);
-            }, 200);
+            this.clearSong().then(function() {
+               self.loadSongData(song);
+            });
         } else {
             alert('Song not found :(');
         }
@@ -370,12 +371,7 @@ var Tracker = React.createClass({
         var self = this;
         setSongName(song.name);
         _.each(song.tracks, function(track, name) {
-            self.addTrack(name);
-        });
-
-        // oh, the humanity
-        setTimeout(function() {
-            _.each(song.tracks, function(track, name) {
+            self.addTrack(name, function() {
                 for(var row in SOUNDS) {
                     var sound = SOUNDS[row].name;
                     if (track[sound]) {
@@ -387,9 +383,10 @@ var Tracker = React.createClass({
                     }
                 }
             });
-            $('#input-tempo').val(song.tempo).trigger('change');
-            $('#input-track-sequence').val(song.sequence).trigger('change');
-        }, 200);
+        });
+
+        $('#input-tempo').val(song.tempo).trigger('change');
+        $('#input-track-sequence').val(song.sequence).trigger('change');
     },
 
     onOpen: function() {
