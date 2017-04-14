@@ -1,22 +1,27 @@
-<% submission = nil
-   if @tp
+<% submission = nil %>
+<% if @tp
      submission = @tp.outcome_service? %>
 <script>
  LAUNCH_PARAMS=<%= @tp.to_params.to_json %>
  REVIEW=<%= !!@review %>
+ <% if @template_id %>TEMPLATE_ID="<%= @template_id %>"<% end %>
+ <% if @template_token %>TEMPLATE_TOKEN="<%= @template_token %>"<% end %>
 </script>
 <% end %>
 <script src="/tracker.js"></script>
 <link rel="stylesheet" type="text/css" href="/tracker.css">
 <div id="alert_container"></div>
 <% if @small_header %>
-  <div class="small-header">PandaRhythm</div>
+  <div class="small-header">Panda Rhythm</div>
 <% else %>
   <h1 class="page-header"><img src="panda-rhythm.png" width="282" height="128" alt="Rockin' Panda by Sarah Stanley">Panda Rhythm</h1>
 <% end %>
 <div class="button-box">
   <% if submission %>
-    <button id="button-submit" disabled class="btn btn-submit"><span aria-label="Submit" title="Submit" class="glyphicon glyphicon-circle-arrow-up"/>&ensp;Submit</button>
+    <button id="button-submit" disabled class="btn btn-submit"><span aria-label="Submit" title="Submit" class="glyphicon glyphicon-circle-arrow-up"></span>&ensp;Submit</button>
+    &emsp;
+  <% elsif @template_token %>
+    <button id="button-template" disabled class="btn btn-submit"><span aria-label="Template" title="Template" class="glyphicon glyphicon-circle-arrow-up"></span>&ensp;Template</button>
     &emsp;
   <% end %>
   <% unless @review %>

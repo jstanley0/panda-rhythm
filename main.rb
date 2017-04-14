@@ -4,7 +4,7 @@ require 'rack'
 require 'oauth/request_proxy/rack_request'
 require 'net/http'
 require 'json'
-require 'byebug'
+require 'digest'
 require_relative 'song_db'
 
 # the not-very-secrets
@@ -21,6 +21,11 @@ post '/' do
   return erb :error unless authorize!
   @review = (params['review'] == '1')
   @small_header = true if @env['HTTP_REFERER'].include?('/assignments/') || @review
+  if !@review && params['custom_canvas_assignment_id']
+    @template_id = Digest::MD5.hexdigest("#{ params['context_id'] }-#{ params['custom_canvas_assignment_id'] }")
+    token = $songdb.get_or_create_song(@template_id, "{}")
+    @template_token = token if @tp.instructor?
+  end
   erb :tracker
 end
 

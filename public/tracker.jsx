@@ -21,6 +21,10 @@ var current_song;
 function setSongName(name) {
     current_song = name;
     document.title = (name ? name : "untitled") + " - Panda Rhythm";
+    var $header = $('.small-header');
+    if ($header.length) {
+        $header.text(document.title);
+    }
 }
 
 function checkId(track, row, col) {
@@ -367,6 +371,11 @@ var Tracker = React.createClass({
 
     loadSongData: function(song) {
         var self = this;
+        if (!song.tracks) {
+            var track = self.addTrack();
+            focusTrack(track);
+            return;
+        }
         setSongName(song.name);
         _.each(song.tracks, function(track, name) {
             self.addTrack(name, function() {
@@ -407,26 +416,40 @@ var Tracker = React.createClass({
         this.refs.saveDialog.openModal(current_song, "Submit Assignment", this.submitSong.bind(this));
     },
 
-    shareSong: function(name, forSubmission)
+    onTemplate: function() {
+        this.refs.saveDialog.openModal(current_song, "Save Template", this.templateSong.bind(this));
+    },
+
+    shareSong: function(name, opts = {})
     {
         this.saveSong(name);
         var songs = JSON.parse(localStorage.songs);
         var song = songs[name];
+        var id, token;
+        if (opts.template) {
+            id = opts.template.id;
+            token = opts.template.token;
+        } else {
+            id = song.id;
+            token = song.token;
+        }
         var dfd = $.Deferred();
-        if (!forSubmission && song.hasOwnProperty('id') && song.hasOwnProperty('token')) {
+        if (!opts.forSubmission && id && token) {
             // update existing song
-            $.ajax("/songs/" + song.id, {
+            $.ajax("/songs/" + id, {
                 method: 'PUT',
                 data: {
-                    token: song.token,
+                    token: token,
                     data: JSON.stringify(song, function(k, v) {
                         return (k == "id" || k == "token") ? undefined : v;
                     })
                 },
                 success: function(data) {
-                    dfd.resolve(song.id);
-                    var url = BASE_URL + "?song=" + song.id;
-                    flashSuccess("Song updated!", url);
+                    dfd.resolve(id);
+                    if (!opts.template) {
+                        var url = BASE_URL + "?song=" + id;
+                        flashSuccess("Song updated!", url);
+                    }
                 },
                 error: function(jqXHR) {
                     flashError("Failed to update song: " + jqXHR.statusText);
@@ -444,7 +467,7 @@ var Tracker = React.createClass({
                     // store id and token for next time
                     dfd.resolve(data.id);
 
-                    if (!forSubmission) {
+                    if (!opts.forSubmission) {
                         songs[name].id = data.id;
                         songs[name].token = data.token;
                         localStorage.songs = JSON.stringify(songs);
@@ -465,7 +488,7 @@ var Tracker = React.createClass({
     submitSong: function(name)
     {
         this.saveSong(name);
-        this.shareSong(name, true).then(function(id) {
+        this.shareSong(name, {forSubmission: true}).then(function(id) {
             $.ajax("/submit", {
                method: 'POST',
                data: {
@@ -479,6 +502,14 @@ var Tracker = React.createClass({
                  flashError("Failed to submit song: " + jqXHR.statusText);
                }
             });
+        });
+    },
+
+    templateSong: function(name)
+    {
+        this.saveSong(name);
+        this.shareSong(name, {template: {id: window.TEMPLATE_ID, token: window.TEMPLATE_TOKEN}}).then(function() {
+            flashSuccess("Assignment template saved!");
         });
     }
 });
@@ -510,15 +541,20 @@ function focusTrack(track, loc) {
 }
 
 function loadShareSong() {
-    var match = window.location.href.match("song=([0-9a-z]+)");
-    if (match) {
-        var id = match[1];
-        $.ajax("/songs/" + id, {
+    var song_id = null;
+
+    if (window.TEMPLATE_ID) {
+        song_id = window.TEMPLATE_ID;
+    } else {
+        var match = window.location.href.match("song=([0-9a-z]+)");
+        if (match) {
+            song_id = match[1];
+        }
+    }
+
+    if (song_id) {
+        $.ajax("/songs/" + song_id, {
             success: function(data) {
-                var $header = $('.small-header');
-                if ($header.length) {
-                    $header.text(data.name + " - PandaRhythm");
-                }
                 g_Tracker.loadSongData(data);
             },
             error: function(jqXHR) {
@@ -540,6 +576,7 @@ function finishInitialization() {
     $("#button-export").prop("disabled", false);
     $("#button-add-track").prop("disabled", false);
     $("#button-submit").prop("disabled", false);
+    $("#button-template").prop("disabled", false);
     if (!loadShareSong()) {
         var track = g_Tracker.addTrack();
         focusTrack(track);
@@ -991,6 +1028,10 @@ $(document).ready(function() {
 
     $("#button-submit").click(function(event) {
         g_Tracker.onSubmit();
+    });
+
+    $("#button-template").click(function(event) {
+        g_Tracker.onTemplate();
     });
 
     $("#button-export").click(function(event) {

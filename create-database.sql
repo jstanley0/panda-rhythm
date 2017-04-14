@@ -1,1 +1,1 @@
-CREATE TABLE songs (id CHAR(16) PRIMARY KEY, token CHAR(16) NOT NULL, data bytea);
+CREATE TABLE songs (id TEXT PRIMARY KEY, token CHAR(16) NOT NULL, data bytea);

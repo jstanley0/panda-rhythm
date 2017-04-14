@@ -1,5 +1,6 @@
 .button-box {
-    padding-bottom: 20px;
+    padding-bottom: 5px;
+    line-height: 45px;
 }
 
 .player-inputs {
@@ -145,6 +146,7 @@ td.play {
 .page-header {
     font-style: oblique;
     font-weight: 300;
+    margin: 10px 0 5px 0;
 }
 
 .page-header img {
@@ -154,7 +156,7 @@ td.play {
 
 .small-header {
     padding-top: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
     font-weight: bold;
     font-family: monospace;
     font-size: large;
