@@ -15,7 +15,7 @@ GEM
       oauth (= 0.4.5)
     oauth (0.4.5)
     pg (0.20.0)
-    rack (1.6.5)
+    rack (1.6.13)
     rack-protection (1.5.3)
       rack
     sinatra (1.4.8)
